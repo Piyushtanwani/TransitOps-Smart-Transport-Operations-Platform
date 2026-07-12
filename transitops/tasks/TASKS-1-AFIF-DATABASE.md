@@ -104,7 +104,7 @@ docker exec transitops-db psql -U transitops -d transitops -c "\d+ trips" | grep
 
 ---
 
-## [ ] DB-07 — Idempotent seed with demo dataset
+## [x] DB-07 — Idempotent seed with demo dataset
 **Depends on:** DB-06
 **Deliverables**
 - `backend/app/db/seed.py`, runnable as `python -m app.db.seed`, exactly per `docs/02 §7`:
