@@ -7,6 +7,9 @@ import { AppShell } from './components/layout/AppShell';
 import { DashboardPage } from './features/dashboard/DashboardPage';
 import { FleetPage } from './features/fleet/FleetPage';
 import { DriversPage } from './features/drivers/DriversPage';
+import { ComponentKit } from './features/dev/ComponentKit';
+import { TripsPage } from './features/trips/TripsPage';
+import { NewTripPage } from './features/trips/NewTripPage';
 
 function App() {
   return (
@@ -15,20 +18,21 @@ function App() {
         <Routes>
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/dev/kit" element={<ComponentKit />} />
           <Route path="/forbidden" element={<div className="p-12 text-center text-danger font-bold text-2xl">403 Forbidden</div>} />
           
           {/* Protected Routes (Shell) */}
           <Route element={<ProtectedRoute />}>
             <Route element={<AppShell />}>
               <Route path="/dashboard" element={<DashboardPage />} />
-              
-              {/* Fleet is accessible by all roles */}
               <Route path="/fleet" element={<FleetPage />} />
-              
-              {/* Drivers accessible by FM, D, SO, FA */}
               <Route path="/drivers" element={<DriversPage />} />
               
-              <Route path="/trips" element={<div className="p-6">Trips Placeholder</div>} />
+              <Route element={<RequireRole roles={['fleet_manager', 'dispatcher']} />}>
+                <Route path="/trips" element={<TripsPage />} />
+                <Route path="/trips/new" element={<NewTripPage />} />
+              </Route>
+              
               <Route path="/maintenance" element={<div className="p-6">Maintenance Placeholder</div>} />
               
               {/* Fuel and Expenses accessible by FM, FA */}
