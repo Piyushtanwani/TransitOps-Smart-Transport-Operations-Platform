@@ -4,7 +4,7 @@ up:            ## start postgres (persistent named volume)
 	docker compose up -d db
 
 install:       ## install backend + frontend dependencies
-	cd backend && python -m venv .venv && . .venv/bin/activate && pip install -e ".[dev]"
+	cd backend && python3.12 -m venv .venv && . .venv/bin/activate && pip install -e ".[dev]"
 	cd frontend && npm install
 
 db-migrate:    ## apply all alembic migrations
