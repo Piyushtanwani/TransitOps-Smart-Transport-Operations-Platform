@@ -70,7 +70,7 @@ cd backend && . .venv/bin/activate && python -c "from app.models.trip import Tri
 
 ---
 
-## [ ] DB-05 — Models: ai_settings, chat, audit
+## [x] DB-05 — Models: ai_settings, chat, audit
 **Depends on:** DB-04
 **Deliverables**
 - `models/ai_settings.py`: singleton (`id SMALLINT PK DEFAULT 1` + `CheckConstraint("id = 1")`), `role_tool_permissions JSONB NOT NULL`, defaults per DDL.

@@ -18,7 +18,7 @@
 | DB-02 | DB wiring: config, session, base, enums | Afif | DONE |
 | DB-03 | Models: users, vehicles, drivers | Afif | DONE |
 | DB-04 | Models: trips, maintenance, fuel, expenses (+partial indexes) | Afif | DONE |
-| DB-05 | Models: ai_settings, chat, audit | Afif | TODO |
+| DB-05 | Models: ai_settings, chat, audit | Afif | DONE |
 | DB-06 | Alembic init + `0001_initial_schema` + schema.sql | Afif | TODO |
 | DB-07 | Idempotent seed with demo dataset | Afif | TODO |
 | DB-08 | Suite D: schema-constraint tests | Afif | TODO |

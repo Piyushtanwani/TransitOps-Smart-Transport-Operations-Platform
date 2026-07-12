@@ -7,5 +7,4 @@ from __future__ import annotations
 
 from app.models import driver, user, vehicle  # noqa: F401  (DB-03)
 from app.models import expense, fuel_log, maintenance, trip  # noqa: F401  (DB-04)
-
-# DB-05: ai_settings, chat, audit
+from app.models import ai_settings, audit, chat  # noqa: F401  (DB-05)
