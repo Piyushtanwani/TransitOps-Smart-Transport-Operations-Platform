@@ -13,7 +13,7 @@ from app.models.enums import ChatRole
 from app.models.user import User
 from app.services.ai.client import OpenRouterError, call_openrouter
 from app.services.ai.context import build_system_prompt
-from app.services.ai.settings import ensure_ai_enabled, get_settings_row
+from app.services.ai.settings import ensure_ai_enabled, get_settings_row, resolve_api_key
 from app.services.ai.tools import TOOLS
 from app.services.audit import audit
 
@@ -78,6 +78,7 @@ def chat(db: Session, user: User, message: str, session_id: uuid.UUID | None = N
                 temperature=float(row.temperature),
                 max_tokens=row.max_tokens,
                 tools=tool_schemas or None,
+                api_key=resolve_api_key(row),
             )
         except OpenRouterError:
             reply = "The AI assistant is temporarily unavailable. Please try again shortly."

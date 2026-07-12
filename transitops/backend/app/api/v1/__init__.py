@@ -11,6 +11,7 @@ from app.api.v1 import (
     drivers,
     expenses,
     fuel_logs,
+    insights,
     maintenance,
     reports,
     trips,
@@ -31,3 +32,4 @@ api_router.include_router(dashboard.router)
 api_router.include_router(reports.router)
 api_router.include_router(ai.router)
 api_router.include_router(ai_advisor.router)
+api_router.include_router(insights.router)

@@ -164,11 +164,14 @@ def _llm_summary(
         {"role": "system", "content": "You are a concise, operational fleet dispatch advisor."},
         {"role": "user", "content": prompt},
     ]
+    from app.services.ai.settings import resolve_api_key
+
     result = call_openrouter(
         messages,
         model=settings_row.model,
         temperature=float(settings_row.temperature),
         max_tokens=settings_row.max_tokens,
+        api_key=resolve_api_key(settings_row),
     )
     return result["choices"][0]["message"]["content"].strip()
 

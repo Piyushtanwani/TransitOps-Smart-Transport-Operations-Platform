@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from sqlalchemy import text
 
 from app.core.config import get_settings
@@ -36,15 +37,22 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+    app.add_middleware(GZipMiddleware, minimum_size=1024)
 
-    # Error handlers (standard envelope) — registered in BE-02.
-    try:
-        from app.core.errors import register_exception_handlers
+    @app.middleware("http")
+    async def security_headers(request, call_next):  # industry-standard response headers
+        response = await call_next(request)
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("X-Frame-Options", "DENY")
+        response.headers.setdefault("Referrer-Policy", "no-referrer")
+        response.headers.setdefault(
+            "Cache-Control", "no-store" if request.url.path.startswith("/api/") else "no-cache"
+        )
+        return response
 
-        register_exception_handlers(app)
-    except Exception:
-        # BE-01 boots before the error framework exists; ignore until BE-02.
-        pass
+    from app.core.errors import register_exception_handlers
+
+    register_exception_handlers(app)
 
     # Domain routers are mounted as each BE task lands them.
     _mount_routers(app)

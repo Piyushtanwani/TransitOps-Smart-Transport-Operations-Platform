@@ -26,15 +26,20 @@ def get_settings_row(db: Session) -> AISettings:
     return row
 
 
+def resolve_api_key(row: AISettings) -> str:
+    """DB-stored key (set from the admin UI) wins; env var is the fallback."""
+    return (row.openrouter_api_key or "").strip() or get_settings().OPENROUTER_API_KEY.strip()
+
+
 def ensure_ai_enabled(db: Session) -> AISettings:
-    """Raise 503 AI_DISABLED when the key is unset or the chatbot is switched off."""
-    if not get_settings().ai_configured:
+    """Raise 503 AI_DISABLED when no key is available or the chatbot is switched off."""
+    row = get_settings_row(db)
+    if not resolve_api_key(row):
         raise DomainError(
             "AI_DISABLED",
-            "The AI assistant is not configured.",
+            "OpenRouter is not configured. A Fleet Manager can add an API key in AI Settings.",
             status_code=503,
         )
-    row = get_settings_row(db)
     if not row.chatbot_enabled:
         raise DomainError(
             "AI_DISABLED",

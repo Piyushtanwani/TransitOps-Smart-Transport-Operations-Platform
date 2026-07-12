@@ -60,3 +60,55 @@ def test_ai_disabled_returns_503(client, db) -> None:
         ensure_ai_enabled(db)
     assert exc.value.code == "AI_DISABLED"
     assert exc.value.status_code == 503
+
+
+# --- DB-stored OpenRouter key (admin-settable from the UI) ---
+
+def test_openrouter_key_settable_from_api_and_never_leaked(client, db) -> None:
+    headers = auth_headers(client, db, "fleet_manager")
+    # initially unset (env empty in dev) → flag false
+    before = client.get(f"{API}/ai/settings", headers=headers).json()
+    assert before["openrouter_key_set"] is False
+    assert "openrouter_api_key" not in before  # raw key never in the payload
+
+    r = client.put(
+        f"{API}/ai/settings", json={"openrouter_api_key": "sk-or-test-123"}, headers=headers
+    )
+    assert r.status_code == 200
+    body = r.json()
+    assert body["openrouter_key_set"] is True
+    assert "openrouter_api_key" not in body
+    assert "sk-or-test-123" not in r.text  # never echoed anywhere
+
+    # clearing it falls back to env (unset here) → flag false again
+    cleared = client.put(
+        f"{API}/ai/settings", json={"openrouter_api_key": ""}, headers=headers
+    ).json()
+    assert cleared["openrouter_key_set"] is False
+
+
+def test_db_key_enables_ai_without_env(client, db) -> None:
+    row = get_settings_row(db)
+    row.openrouter_api_key = "sk-or-db-key"
+    row.chatbot_enabled = True
+    db.commit()
+    enabled = ensure_ai_enabled(db)  # must NOT raise despite env key being unset
+    assert enabled.id == 1
+
+
+def test_chat_works_with_db_key(client, db, monkeypatch) -> None:
+    row = get_settings_row(db)
+    row.openrouter_api_key = "sk-or-db-key"
+    db.commit()
+    captured = {}
+
+    def fake(messages, **kw):
+        captured.update(kw)
+        return {"choices": [{"message": {"content": "OK from DB key"}}]}
+
+    monkeypatch.setattr("app.services.ai.chat.call_openrouter", fake)
+    headers = auth_headers(client, db, "driver")
+    r = client.post(f"{API}/ai/chat", json={"message": "ping"}, headers=headers)
+    assert r.status_code == 200
+    assert r.json()["reply"] == "OK from DB key"
+    assert captured.get("api_key") == "sk-or-db-key"  # DB key flowed to the client

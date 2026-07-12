@@ -25,6 +25,8 @@ class AISettingsFull(AISettingsPublic):
     system_prompt: str
     role_tool_permissions: dict
     updated_at: datetime
+    # True when a key is available (DB or env). The raw key is never returned.
+    openrouter_key_set: bool = False
 
 
 class AISettingsUpdate(BaseModel):
@@ -36,6 +38,8 @@ class AISettingsUpdate(BaseModel):
     max_tokens: int | None = Field(default=None, ge=128, le=8192)
     system_prompt: str | None = Field(default=None, max_length=4000)
     role_tool_permissions: dict | None = None
+    # Set from the admin UI; stored in the DB. Empty string clears it (env fallback).
+    openrouter_api_key: str | None = Field(default=None, max_length=200)
 
 
 # --- chat (BE-14) ---

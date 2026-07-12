@@ -19,9 +19,16 @@ from app.schemas.ai import (
     SessionOut,
 )
 from app.services.ai import chat as chat_service
-from app.services.ai.settings import get_settings_row, update_settings
+from app.services.ai.settings import get_settings_row, resolve_api_key, update_settings
 
 router = APIRouter(prefix="/ai", tags=["AI"])
+
+
+def _full_settings(row) -> AISettingsFull:
+    """Serialize the settings row; expose key presence, never the key itself."""
+    out = AISettingsFull.model_validate(row)
+    out.openrouter_key_set = bool(resolve_api_key(row))
+    return out
 
 
 @router.get("/settings", summary="AI settings (redacted for non-FM)")
@@ -30,7 +37,7 @@ def get_ai_settings(
 ) -> AISettingsPublic | AISettingsFull:
     row = get_settings_row(db)
     if user.role == UserRole.fleet_manager:
-        return AISettingsFull.model_validate(row)
+        return _full_settings(row)
     return AISettingsPublic(chatbot_enabled=row.chatbot_enabled, model=row.model)
 
 
@@ -42,7 +49,7 @@ def put_ai_settings(
 ) -> AISettingsFull:
     data = body.model_dump(exclude_unset=True)
     row = update_settings(db, data, actor)
-    return AISettingsFull.model_validate(row)
+    return _full_settings(row)
 
 
 @router.get("/sessions", response_model=list[SessionOut], summary="List my chat sessions")

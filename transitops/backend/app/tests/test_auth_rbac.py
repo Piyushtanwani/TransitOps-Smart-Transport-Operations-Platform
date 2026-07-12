@@ -28,27 +28,43 @@ def test_login_ok_returns_pair_and_user(client, db) -> None:
     assert body["user"]["role"] == "fleet_manager"
 
 
-def test_login_wrong_password_401(client, db) -> None:
+def test_login_wrong_password_friendly_message(client, db) -> None:
     make_user(db, UserRole.driver, email="d@test.in")
     r = login(client, "d@test.in", "not-the-password")
     assert r.status_code == 401
-    assert r.json()["error"]["code"] == "INVALID_CREDENTIALS"
+    err = r.json()["error"]
+    assert err["code"] == "INCORRECT_PASSWORD"
+    assert err["field"] == "password"
+    assert "Incorrect password" in err["message"]
 
 
-def test_unknown_email_same_message_as_wrong_password(client, db) -> None:
-    make_user(db, UserRole.driver, email="known@test.in")
-    unknown = login(client, "nobody@test.in", "whatever")
-    wrong = login(client, "known@test.in", "whatever")
-    # No user enumeration: identical status + message.
-    assert unknown.status_code == wrong.status_code == 401
-    assert unknown.json() == wrong.json()
+def test_login_unknown_email_friendly_message(client, db) -> None:
+    r = login(client, "nobody@test.in", "whatever")
+    assert r.status_code == 401
+    err = r.json()["error"]
+    assert err["code"] == "EMAIL_NOT_FOUND"
+    assert err["field"] == "email"
+    assert "No account found" in err["message"]
 
 
-def test_inactive_user_401(client, db) -> None:
+def test_inactive_user_friendly_message(client, db) -> None:
     make_user(db, UserRole.safety_officer, email="off@test.in", is_active=False)
     r = login(client, "off@test.in")
     assert r.status_code == 401
-    assert r.json()["error"]["code"] == "INVALID_CREDENTIALS"
+    err = r.json()["error"]
+    assert err["code"] == "ACCOUNT_DISABLED"
+    assert "deactivated" in err["message"]
+
+
+def test_login_rate_limited_after_repeated_failures(client, db) -> None:
+    make_user(db, UserRole.driver, email="brute@test.in")
+    for _ in range(8):
+        assert login(client, "brute@test.in", "wrong-pass").status_code == 401
+    r = login(client, "brute@test.in", "wrong-pass")
+    assert r.status_code == 429
+    assert r.json()["error"]["code"] == "TOO_MANY_ATTEMPTS"
+    # correct password is also blocked while throttled (standard lockout behavior)
+    assert login(client, "brute@test.in").status_code == 429
 
 
 def test_me_roundtrip(client, db) -> None:

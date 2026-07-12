@@ -19,6 +19,7 @@ def call_openrouter(
     temperature: float,
     max_tokens: int,
     tools: list[dict] | None = None,
+    api_key: str | None = None,
 ) -> dict[str, Any]:
     settings = get_settings()
     payload: dict[str, Any] = {
@@ -30,7 +31,7 @@ def call_openrouter(
     if tools:
         payload["tools"] = tools
     headers = {
-        "Authorization": f"Bearer {settings.OPENROUTER_API_KEY}",
+        "Authorization": f"Bearer {api_key or settings.OPENROUTER_API_KEY}",
         "HTTP-Referer": "http://localhost:5173",
         "X-Title": "TransitOps",
     }
