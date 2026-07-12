@@ -87,7 +87,7 @@ cd backend && . .venv/bin/activate && python -c "from app.db.base import Base; p
 
 ---
 
-## [ ] DB-06 — Alembic init + `0001_initial_schema` + schema.sql export
+## [x] DB-06 — Alembic init + `0001_initial_schema` + schema.sql export
 **Depends on:** DB-05
 **Deliverables**
 - `alembic init alembic` under `backend/`; `alembic/env.py` imports `app.db.base` and sets `target_metadata = Base.metadata`; reads `DATABASE_URL` from settings/env.
