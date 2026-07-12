@@ -1,6 +1,5 @@
-import React from 'react';
 import { Select } from '../../components/ui/Select';
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
+import { Card, CardContent } from '../../components/ui/Card';
 
 const kpiData = [
   { label: 'ACTIVE VEHICLES', value: '53', color: 'border-l-info' },

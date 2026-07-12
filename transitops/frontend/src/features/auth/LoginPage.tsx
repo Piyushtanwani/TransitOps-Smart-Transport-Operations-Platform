@@ -1,8 +1,14 @@
 import React, { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
 import { Button } from '../../components/ui/Button';
 import { Checkbox } from '../../components/ui/Checkbox';
+import { useAuth } from '../../auth/AuthContext';
+import { useApiError } from '../../hooks/useApiError';
 
 const roleOptions = [
   { label: 'Fleet Manager', value: 'fleet_manager' },
@@ -11,32 +17,61 @@ const roleOptions = [
   { label: 'Financial Analyst', value: 'financial_analyst' },
 ];
 
+const loginSchema = z.object({
+  email: z.string().email('Invalid email address'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
+});
+
+type LoginFormInputs = z.infer<typeof loginSchema>;
+
 export function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const { login } = useAuth();
+  const { handleApiError } = useApiError();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [role, setRole] = useState('dispatcher');
+  const [loginError, setLoginError] = useState<string | null>(null);
+  
+  const from = (location.state as any)?.from?.pathname || '/dashboard';
+
+  const { control, handleSubmit, setValue, formState: { errors, isSubmitting } } = useForm<LoginFormInputs>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: 'dispatcher@transitops.in',
+      password: 'password123',
+    }
+  });
 
   const handleRoleSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selected = e.target.value;
     setRole(selected);
     if (selected === 'dispatcher') {
-      setEmail('dispatcher@transitops.in');
-      setPassword('password123');
+      setValue('email', 'dispatch@transitops.in');
+      setValue('password', 'password123');
     } else if (selected === 'fleet_manager') {
-      setEmail('fleet@transitops.in');
-      setPassword('password123');
+      setValue('email', 'manager@transitops.in');
+      setValue('password', 'password123');
     } else if (selected === 'safety_officer') {
-      setEmail('safety@transitops.in');
-      setPassword('password123');
+      setValue('email', 'safety@transitops.in');
+      setValue('password', 'password123');
     } else if (selected === 'financial_analyst') {
-      setEmail('finance@transitops.in');
-      setPassword('password123');
+      setValue('email', 'finance@transitops.in');
+      setValue('password', 'password123');
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log('Login attempt', { email, password });
+  const onSubmit = async (data: LoginFormInputs) => {
+    setLoginError(null);
+    try {
+      await login(data.email, data.password);
+      navigate(from, { replace: true });
+    } catch (err: any) {
+      if (err.response?.status === 401) {
+        setLoginError('Invalid credentials.');
+      } else {
+        handleApiError(err);
+      }
+    }
   };
 
   return (
@@ -75,24 +110,44 @@ export function LoginPage() {
             <p className="mt-2 text-sm text-on-surface-variant">Enter your credentials to continue</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <Input 
-              label="Email" 
-              type="email" 
-              placeholder="e.g. dispatcher@transitops.in" 
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required 
-            />
+          {loginError && (
+            <div className="mb-6 p-4 bg-danger/10 border border-danger/30 rounded-md text-danger font-medium text-sm">
+              {loginError}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+            <div>
+              <Controller
+                name="email"
+                control={control}
+                render={({ field }) => (
+                  <Input 
+                    label="Email" 
+                    type="email" 
+                    placeholder="e.g. dispatch@transitops.in" 
+                    {...field}
+                  />
+                )}
+              />
+              {errors.email && <p className="mt-1 text-xs text-danger">{errors.email.message}</p>}
+            </div>
             
-            <Input 
-              label="Password" 
-              type="password" 
-              placeholder="••••••••" 
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required 
-            />
+            <div>
+              <Controller
+                name="password"
+                control={control}
+                render={({ field }) => (
+                  <Input 
+                    label="Password" 
+                    type="password" 
+                    placeholder="••••••••" 
+                    {...field}
+                  />
+                )}
+              />
+              {errors.password && <p className="mt-1 text-xs text-danger">{errors.password.message}</p>}
+            </div>
             
             <Select 
               label="Role (Quick)" 
@@ -108,8 +163,8 @@ export function LoginPage() {
               </a>
             </div>
 
-            <Button type="submit" className="w-full mt-2" size="lg">
-              Sign In
+            <Button type="submit" className="w-full mt-2" size="lg" disabled={isSubmitting}>
+              {isSubmitting ? 'Signing in...' : 'Sign In'}
             </Button>
           </form>
 
