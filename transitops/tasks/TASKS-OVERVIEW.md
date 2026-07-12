@@ -36,9 +36,9 @@
 | BE-10 | Dashboard KPIs + charts endpoints | Ismail | DONE |
 | BE-11 | Reports endpoint + CSV export | Ismail | DONE |
 | BE-12 | GATE: Suites A/B/C green | Ismail | DONE |
-| BE-13 | AI: client, knowledge/context, settings API | Ismail | TODO |
-| BE-14 | AI: tool registry + chat loop + sessions | Ismail | TODO |
-| BE-15 | AI: Trip Advisor endpoint | Ismail | TODO |
+| BE-13 | AI: client, knowledge/context, settings API | Ismail | DONE |
+| BE-14 | AI: tool registry + chat loop + sessions | Ismail | DONE |
+| BE-15 | AI: Trip Advisor endpoint | Ismail | DONE |
 | BE-16 | (T2) MCP server over tool registry | Ismail | TODO |
 | FE-01 | Vite scaffold + Tailwind tokens + fonts + theme toggle | Piyush | TODO |
 | FE-02 | Mockup fidelity review + ui/ component kit | Piyush | TODO |

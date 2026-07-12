@@ -188,7 +188,7 @@ cd backend && . .venv/bin/activate && pytest -q && ruff check app
 
 ---
 
-## [ ] BE-13 — AI: client, knowledge/context, settings API
+## [x] BE-13 — AI: client, knowledge/context, settings API
 **Depends on:** BE-12, DB-05
 **Deliverables**
 - `services/ai/client.py` (httpx call per `docs/06 §1`, one retry on 429/5xx, 45 s timeout), `services/ai/knowledge.py` (paste the ready-made `PROJECT_KNOWLEDGE` block from `docs/10-AI-KNOWLEDGE-BASE.md` verbatim), `services/ai/context.py` (assemble 4-part system prompt).
@@ -204,7 +204,7 @@ cd backend && . .venv/bin/activate && pytest -q -k "ai_settings or ai_disabled"
 
 ---
 
-## [ ] BE-14 — AI: tool registry + chat loop + sessions
+## [x] BE-14 — AI: tool registry + chat loop + sessions
 **Depends on:** BE-13
 **Deliverables**
 - `services/ai/tools.py`: the 9 tools of `docs/06 §4` — each `{name, description, json_schema, allowed_roles_default, executor(db, user, **args)}`; executors reuse existing services/queries, cap `limit ≤ 50`, strip role-forbidden fields (e.g. `acquisition_cost` for D/SO).
@@ -220,7 +220,7 @@ cd backend && . .venv/bin/activate && pytest -q -k "ai_chat or ai_tools"
 
 ---
 
-## [ ] BE-15 — AI: Trip Advisor endpoint
+## [x] BE-15 — AI: Trip Advisor endpoint
 **Depends on:** BE-14
 **Deliverables**
 - `services/ai/advisor.py` + `POST /ai/trip-advisor` per `docs/06 §6`: deterministic hard checks (reuse trip_service validators, non-mutating) + soft flags (capacity >90 %, safety <60, license <30 d, odometer since last closed maintenance >10 000 km, >500 km with score <70); verdict block/caution/go; LLM 3-sentence summary when enabled, template summary otherwise.

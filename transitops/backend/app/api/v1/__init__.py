@@ -5,6 +5,7 @@ from fastapi import APIRouter
 
 from app.api.v1 import (
     ai,
+    ai_advisor,
     auth,
     dashboard,
     drivers,
@@ -29,3 +30,4 @@ api_router.include_router(expenses.router)
 api_router.include_router(dashboard.router)
 api_router.include_router(reports.router)
 api_router.include_router(ai.router)
+api_router.include_router(ai_advisor.router)
