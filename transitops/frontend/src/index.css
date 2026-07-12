@@ -1,0 +1,50 @@
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@500&family=Inter:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Dark theme by default */
+  --color-surface-0: #0e1116;
+  --color-surface-1: #161b22;
+  --color-surface-2: #1f2630;
+  --color-line: #2a323d;
+  --color-ink: #e8edf2;
+  --color-ink-mute: #94a1b2;
+
+  --color-signal: #f5a524;
+  --color-ok: #3fb68b;
+  --color-info: #4c8dff;
+  --color-warn: #e8833a;
+  --color-danger: #e5484d;
+  --color-neutral: #6b7684;
+}
+
+html.light {
+  --color-surface-0: #ffffff;
+  --color-surface-1: #f6f7f9;
+  --color-surface-2: #f1f5f9;
+  --color-line: #e3e7ec;
+  --color-ink: #16202b;
+  --color-ink-mute: #64748b;
+}
+
+@layer base {
+  body {
+    @apply bg-surface-0 text-ink font-sans antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-display tracking-tight;
+  }
+
+  .font-data {
+    @apply font-mono tabular-nums;
+  }
+}
