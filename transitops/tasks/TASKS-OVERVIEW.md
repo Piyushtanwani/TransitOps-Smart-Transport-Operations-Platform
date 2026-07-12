@@ -23,7 +23,7 @@
 | DB-07 | Idempotent seed with demo dataset | Afif | DONE |
 | DB-08 | Suite D: schema-constraint tests | Afif | DONE |
 | DB-09 | `db/queries.py`: KPI + report SQL functions | Afif | DONE |
-| DB-10 | DB ops: reset target, index review, EXPLAIN notes | Afif | TODO |
+| DB-10 | DB ops: reset target, index review, EXPLAIN notes | Afif | DONE |
 | BE-01 | Backend scaffold: pyproject, app skeleton, health, Makefile | Ismail | DONE |
 | BE-02 | Core: settings, security (JWT/bcrypt), deps, error framework | Ismail | DONE |
 | BE-03 | Auth endpoints: login / refresh / me (+tests) | Ismail | DONE |

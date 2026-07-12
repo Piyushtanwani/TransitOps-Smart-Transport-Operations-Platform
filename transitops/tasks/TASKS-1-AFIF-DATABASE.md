@@ -6,7 +6,7 @@ You own the judges' **top criterion**. Your demo moment is scripted in `docs/09 
 
 ---
 
-## [ ] DB-01 — Postgres up, test DB, git identity
+## [x] DB-01 — Postgres up, test DB, git identity
 **Depends on:** —
 **Deliverables**
 - `docker-compose.yml` and `.gitignore` **ship in this pack at repo root** — verify them against `docs/08 §1–2`; do not rewrite.
@@ -158,7 +158,7 @@ EOF
 
 ---
 
-## [ ] DB-10 — DB ops: demo reset, index review, EXPLAIN notes
+## [x] DB-10 — DB ops: demo reset, index review, EXPLAIN notes
 **Depends on:** DB-07, DB-09
 **Deliverables**
 - The `db-reset` target **ships in the root Makefile** — verify it end-to-end (downgrade base → upgrade head → seed `--force`).
