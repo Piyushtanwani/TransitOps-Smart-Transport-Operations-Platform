@@ -68,7 +68,7 @@ cd backend && . .venv/bin/activate && pytest -q app/tests/test_auth_rbac.py -k u
 
 ---
 
-## [ ] BE-05 — Vehicles CRUD + retire/unretire + `dispatchable`
+## [x] BE-05 — Vehicles CRUD + retire/unretire + `dispatchable`
 **Depends on:** BE-04, DB-04
 **Deliverables**
 - `schemas/vehicle.py` (create/update/read; read includes rollups `open_maintenance`, `active_trip_code` via two cheap subqueries on detail only), `api/v1/vehicles.py` + `services/vehicle_service.py`:

@@ -17,7 +17,7 @@ Base URL `/api/v1`. All endpoints require `Authorization: Bearer <access_token>`
 ```
 - `422` validation (Pydantic errors mapped: first error → `field`, readable `message`).
 - `409` business-rule conflict (`DomainError` codes below). `401` bad/expired token → `TOKEN_EXPIRED`/`INVALID_CREDENTIALS`. `403` `FORBIDDEN_ROLE`. `404` `NOT_FOUND`.
-- Domain codes (exhaustive): `DUPLICATE_REGISTRATION`, `DUPLICATE_LICENSE`, `DUPLICATE_EMAIL`, `VEHICLE_NOT_AVAILABLE`, `DRIVER_NOT_AVAILABLE`, `DRIVER_LICENSE_EXPIRED`, `DRIVER_SUSPENDED`, `CARGO_EXCEEDS_CAPACITY`, `INVALID_STATUS_TRANSITION`, `VEHICLE_HAS_OPEN_MAINTENANCE`, `END_ODOMETER_LT_START`, `AI_DISABLED`, `AI_TOOL_FORBIDDEN`.
+- Domain codes (exhaustive): `DUPLICATE_REGISTRATION`, `DUPLICATE_LICENSE`, `DUPLICATE_EMAIL`, `VEHICLE_NOT_AVAILABLE`, `DRIVER_NOT_AVAILABLE`, `DRIVER_LICENSE_EXPIRED`, `DRIVER_SUSPENDED`, `CARGO_EXCEEDS_CAPACITY`, `INVALID_STATUS_TRANSITION`, `VEHICLE_HAS_OPEN_MAINTENANCE`, `VEHICLE_HAS_HISTORY`, `END_ODOMETER_LT_START`, `AI_DISABLED`, `AI_TOOL_FORBIDDEN`.
 
 ## 3. RBAC matrix (enforced via `require_roles`; FM = fleet_manager, D = driver/dispatcher, SO = safety_officer, FA = financial_analyst)
 

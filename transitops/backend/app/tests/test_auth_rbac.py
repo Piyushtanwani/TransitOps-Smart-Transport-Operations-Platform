@@ -109,13 +109,28 @@ def _sweep_body(key: str | None) -> dict | None:
             "role": "driver",
             "password": "passw0rd1",
         }
+    if key == "vehicle":
+        return {
+            "registration_number": f"TS-{uuid.uuid4().hex[:6]}",
+            "name": "Sweep Truck",
+            "type": "truck",
+            "max_load_capacity_kg": 1000,
+            "acquisition_cost": 500000,
+            "region": "North",
+        }
     return None
 
 
+_ALL_READ = {"fleet_manager": 200, "driver": 200, "safety_officer": 200, "financial_analyst": 200}
+_FM_ONLY_CREATE = {"fleet_manager": 201, "driver": 403, "safety_officer": 403, "financial_analyst": 403}
+_FM_ONLY_LIST = {"fleet_manager": 200, "driver": 403, "safety_officer": 403, "financial_analyst": 403}
+
 # (path, method, body_key, {role: expected_status})
 RBAC_MATRIX: list[tuple] = [
-    ("/users", "GET", None, {"fleet_manager": 200, "driver": 403, "safety_officer": 403, "financial_analyst": 403}),
-    ("/users", "POST", "user", {"fleet_manager": 201, "driver": 403, "safety_officer": 403, "financial_analyst": 403}),
+    ("/users", "GET", None, _FM_ONLY_LIST),
+    ("/users", "POST", "user", _FM_ONLY_CREATE),
+    ("/vehicles", "GET", None, _ALL_READ),
+    ("/vehicles", "POST", "vehicle", _FM_ONLY_CREATE),
 ]
 
 _SWEEP_IDS = [f"{m}{p}" for (p, m, _, _) in RBAC_MATRIX]
