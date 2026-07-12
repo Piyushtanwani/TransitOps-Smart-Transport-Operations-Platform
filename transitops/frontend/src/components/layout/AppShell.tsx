@@ -5,11 +5,11 @@ import type { Role } from '../../types/api';
 import { ChatWidget } from '../ui/ChatWidget';
 
 const ALL_NAV_ITEMS = [
-  { label: 'Dashboard', path: '/dashboard', roles: ['fleet_manager', 'dispatcher', 'safety_officer', 'financial_analyst'] },
-  { label: 'Fleet', path: '/fleet', roles: ['fleet_manager', 'dispatcher', 'safety_officer', 'financial_analyst'] },
-  { label: 'Drivers', path: '/drivers', roles: ['fleet_manager', 'dispatcher', 'safety_officer', 'financial_analyst'] },
-  { label: 'Trips', path: '/trips', roles: ['fleet_manager', 'dispatcher'] },
-  { label: 'Maintenance', path: '/maintenance', roles: ['fleet_manager', 'dispatcher', 'safety_officer', 'financial_analyst'] },
+  { label: 'Dashboard', path: '/dashboard', roles: ['fleet_manager', 'driver', 'safety_officer', 'financial_analyst'] },
+  { label: 'Fleet', path: '/fleet', roles: ['fleet_manager', 'driver', 'safety_officer', 'financial_analyst'] },
+  { label: 'Drivers', path: '/drivers', roles: ['fleet_manager', 'driver', 'safety_officer', 'financial_analyst'] },
+  { label: 'Trips', path: '/trips', roles: ['fleet_manager', 'driver'] },
+  { label: 'Maintenance', path: '/maintenance', roles: ['fleet_manager', 'driver', 'safety_officer', 'financial_analyst'] },
   { label: 'Fuel & Expenses', path: '/fuel', roles: ['fleet_manager', 'financial_analyst'] },
   { label: 'Analytics', path: '/analytics', roles: ['fleet_manager', 'financial_analyst'] },
   { label: 'Settings', path: '/settings', roles: ['fleet_manager'] },

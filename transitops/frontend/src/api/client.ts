@@ -1,7 +1,12 @@
 import axios, { AxiosError } from 'axios';
-import type { ErrorEnvelope } from '../types/api';
+import type { InternalAxiosRequestConfig } from 'axios';
+import type { ErrorEnvelope, LoginResponse } from '../types/api';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
+/** localStorage keys for the token pair. Shared with AuthContext.tsx — keep in sync. */
+export const ACCESS_TOKEN_KEY = 'access_token';
+export const REFRESH_TOKEN_KEY = 'refresh_token';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -9,6 +14,10 @@ export const apiClient = axios.create({
     'Content-Type': 'application/json',
   },
 });
+
+interface RetryableRequestConfig extends InternalAxiosRequestConfig {
+  _retry?: boolean;
+}
 
 let isRefreshing = false;
 let refreshSubscribers: ((token: string) => void)[] = [];
@@ -18,13 +27,20 @@ const subscribeTokenRefresh = (cb: (token: string) => void) => {
 };
 
 const onRefreshed = (token: string) => {
-  refreshSubscribers.map((cb) => cb(token));
+  refreshSubscribers.forEach((cb) => cb(token));
   refreshSubscribers = [];
 };
 
+/** Clears the session and hard-navigates to /login (used when refresh itself fails). */
+function hardLogout() {
+  localStorage.removeItem(ACCESS_TOKEN_KEY);
+  localStorage.removeItem(REFRESH_TOKEN_KEY);
+  window.location.href = '/login';
+}
+
 apiClient.interceptors.request.use(
   (config) => {
-    const accessToken = localStorage.getItem('access_token');
+    const accessToken = localStorage.getItem(ACCESS_TOKEN_KEY);
     if (accessToken) {
       config.headers.Authorization = `Bearer ${accessToken}`;
     }
@@ -36,11 +52,11 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError<ErrorEnvelope>) => {
-    const originalRequest = error.config;
+    const originalRequest = error.config as RetryableRequestConfig | undefined;
     if (!originalRequest) return Promise.reject(error);
 
     // If 401 and we haven't retried yet
-    if (error.response?.status === 401 && !(originalRequest as any)._retry) {
+    if (error.response?.status === 401 && !originalRequest._retry) {
       if (isRefreshing) {
         return new Promise((resolve) => {
           subscribeTokenRefresh((token: string) => {
@@ -50,42 +66,30 @@ apiClient.interceptors.response.use(
         });
       }
 
-      (originalRequest as any)._retry = true;
+      originalRequest._retry = true;
       isRefreshing = true;
 
       try {
-        const refreshToken = localStorage.getItem('refresh_token');
-        if (!refreshToken) throw new Error('No refresh token');
+        const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
+        if (!refreshToken) throw new Error('No refresh token available');
 
-        // Instead of real backend, check if mock is active (in dev/stub mode)
-        const isMockActive = true; 
-        
-        let newAccessToken = '';
-        if (isMockActive) {
-           const { mockRefresh } = await import('./__mocks__/auth');
-           const data = await mockRefresh(refreshToken);
-           newAccessToken = data.access_token;
-           localStorage.setItem('access_token', newAccessToken);
-           localStorage.setItem('refresh_token', data.refresh_token);
-        } else {
-           const { data } = await axios.post(`${API_BASE_URL}/auth/refresh`, { refresh_token: refreshToken });
-           newAccessToken = data.access_token;
-           localStorage.setItem('access_token', newAccessToken);
-           localStorage.setItem('refresh_token', data.refresh_token);
-        }
+        // Bare axios (not apiClient) so this call never re-enters these interceptors.
+        const { data } = await axios.post<LoginResponse>(`${API_BASE_URL}/auth/refresh`, {
+          refresh_token: refreshToken,
+        });
+
+        localStorage.setItem(ACCESS_TOKEN_KEY, data.access_token);
+        localStorage.setItem(REFRESH_TOKEN_KEY, data.refresh_token);
 
         isRefreshing = false;
-        onRefreshed(newAccessToken);
+        onRefreshed(data.access_token);
 
-        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+        originalRequest.headers.Authorization = `Bearer ${data.access_token}`;
         return apiClient(originalRequest);
       } catch (refreshError) {
         isRefreshing = false;
         refreshSubscribers = [];
-        // Hard logout on refresh failure
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-        window.location.href = '/login';
+        hardLogout();
         return Promise.reject(refreshError);
       }
     }

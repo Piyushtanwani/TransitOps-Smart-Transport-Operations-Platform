@@ -1,28 +1,47 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { tripSchema } from '../../lib/schemas/trip';
-import type { TripFormInputs } from '../../lib/schemas/trip';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { apiClient } from '../../api/client';
+import type { Page } from '../../types/api';
+import {
+  tripSchema,
+  getApiErrorMessage,
+  type TripFormInputs,
+  type Trip,
+  type VehicleOption,
+  type DriverOption,
+} from '../../lib/schemas/trip';
 import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
 import { Button } from '../../components/ui/Button';
 import { Textarea } from '../../components/ui/Textarea';
 
-const MOCK_VEHICLES = [
-  { id: 'v1', reg: 'MH-01-AB-1234', name: 'Van-05', capacity: 500 },
-  { id: 'v2', reg: 'KA-05-XY-9876', name: 'Truck-02', capacity: 2000 },
-];
-
-const MOCK_DRIVERS = [
-  { id: 'd1', name: 'Alex Manager', expiry: '2028-12-01', score: 96 },
-  { id: 'd2', name: 'Priya Officer', expiry: '2025-08-15', score: 99 },
-];
+const TRIP_FORM_FIELDS = [
+  'source',
+  'destination',
+  'vehicle_id',
+  'driver_id',
+  'cargo_weight_kg',
+  'planned_distance_km',
+  'revenue',
+  'notes',
+] as const;
 
 export function NewTripPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [formError, setFormError] = useState<string | null>(null);
 
-  const { control, handleSubmit, watch, setError, clearErrors, formState: { errors } } = useForm<TripFormInputs>({
+  const {
+    control,
+    handleSubmit,
+    watch,
+    setError,
+    clearErrors,
+    formState: { errors },
+  } = useForm<TripFormInputs>({
     resolver: zodResolver(tripSchema),
     defaultValues: {
       source: '',
@@ -32,31 +51,91 @@ export function NewTripPage() {
       cargo_weight_kg: undefined,
       planned_distance_km: undefined,
       revenue: undefined,
-      notes: ''
-    }
+      notes: '',
+    },
+  });
+
+  // Vehicle/driver pickers: dispatchable/assignable pools only (BR-2/BR-3).
+  const vehiclesQuery = useQuery({
+    queryKey: ['vehicles', 'dispatchable'],
+    queryFn: async () => {
+      const { data } = await apiClient.get<Page<VehicleOption>>('/vehicles', {
+        params: { dispatchable: true, page_size: 100 },
+      });
+      return data;
+    },
+  });
+
+  const driversQuery = useQuery({
+    queryKey: ['drivers', 'assignable'],
+    queryFn: async () => {
+      const { data } = await apiClient.get<Page<DriverOption>>('/drivers', {
+        params: { assignable: true, page_size: 100 },
+      });
+      return data;
+    },
   });
 
   const vehicleId = watch('vehicle_id');
   const cargoWeight = watch('cargo_weight_kg');
 
+  // Live client-side capacity check — flags the error before submit.
   useEffect(() => {
-    if (vehicleId && cargoWeight !== undefined && !isNaN(cargoWeight)) {
-      const vehicle = MOCK_VEHICLES.find(v => v.id === vehicleId);
-      if (vehicle && cargoWeight > vehicle.capacity) {
-        setError('cargo_weight_kg', { 
-          type: 'manual', 
-          message: `${cargoWeight} kg exceeds ${vehicle.name} capacity of ${vehicle.capacity} kg` 
-        });
-      } else {
-        clearErrors('cargo_weight_kg');
-      }
+    if (!vehicleId || typeof cargoWeight !== 'number' || Number.isNaN(cargoWeight)) {
+      clearErrors('cargo_weight_kg');
+      return;
     }
-  }, [vehicleId, cargoWeight, setError, clearErrors]);
+    const vehicle = vehiclesQuery.data?.items.find((v) => v.id === vehicleId);
+    if (!vehicle) return;
+    const capacity = Number(vehicle.max_load_capacity_kg);
+    if (cargoWeight > capacity) {
+      setError('cargo_weight_kg', {
+        type: 'manual',
+        message: `${cargoWeight} kg exceeds ${vehicle.name} capacity of ${capacity} kg`,
+      });
+    } else {
+      clearErrors('cargo_weight_kg');
+    }
+  }, [vehicleId, cargoWeight, vehiclesQuery.data, setError, clearErrors]);
+
+  const createTripMutation = useMutation({
+    mutationFn: async (payload: TripFormInputs) => {
+      const { data } = await apiClient.post<Trip>('/trips', {
+        source: payload.source,
+        destination: payload.destination,
+        vehicle_id: payload.vehicle_id,
+        driver_id: payload.driver_id,
+        cargo_weight_kg: payload.cargo_weight_kg,
+        planned_distance_km: payload.planned_distance_km,
+        revenue: payload.revenue,
+        notes: payload.notes || undefined,
+      });
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['trips'] });
+      queryClient.invalidateQueries({ queryKey: ['vehicles'] });
+      queryClient.invalidateQueries({ queryKey: ['drivers'] });
+      queryClient.invalidateQueries({ queryKey: ['kpis'] });
+      navigate('/trips');
+    },
+    onError: (error) => {
+      const { message, field } = getApiErrorMessage(error);
+      if (field && (TRIP_FORM_FIELDS as readonly string[]).includes(field)) {
+        setError(field as (typeof TRIP_FORM_FIELDS)[number], { type: 'server', message });
+      } else {
+        setFormError(message);
+      }
+    },
+  });
 
   const onSubmit = (data: TripFormInputs) => {
-    console.log('Trip created:', data);
-    navigate('/trips');
+    setFormError(null);
+    createTripMutation.mutate(data);
   };
+
+  const noVehicles = !vehiclesQuery.isLoading && (vehiclesQuery.data?.items.length ?? 0) === 0;
+  const noDrivers = !driversQuery.isLoading && (driversQuery.data?.items.length ?? 0) === 0;
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 pb-12">
@@ -67,7 +146,12 @@ export function NewTripPage() {
 
       <div className="bg-surface-1 rounded-md border border-line p-8">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-          
+          {formError && (
+            <div className="rounded-md border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger">
+              {formError}
+            </div>
+          )}
+
           {/* Route Section */}
           <div>
             <h2 className="text-sm font-semibold uppercase tracking-wider text-ink-mute mb-4 border-b border-line pb-2">Route Details</h2>
@@ -94,14 +178,15 @@ export function NewTripPage() {
                 <Controller
                   name="planned_distance_km"
                   control={control}
-                  render={({ field: { onChange, ...field } }) => (
-                    <Input 
-                      label="Planned Distance (km)" 
-                      type="number" 
+                  render={({ field: { onChange, value, ...field } }) => (
+                    <Input
+                      label="Planned Distance (km)"
+                      type="number"
                       placeholder="e.g. 150"
+                      value={value ?? ''}
                       onChange={(e) => onChange(e.target.valueAsNumber || undefined)}
-                      {...field} 
-                      error={errors.planned_distance_km?.message} 
+                      {...field}
+                      error={errors.planned_distance_km?.message}
                     />
                   )}
                 />
@@ -118,11 +203,15 @@ export function NewTripPage() {
                   name="vehicle_id"
                   control={control}
                   render={({ field }) => (
-                    <Select 
-                      label="Vehicle" 
+                    <Select
+                      label="Vehicle"
+                      hint={noVehicles ? 'No available vehicles — check Maintenance.' : undefined}
                       options={[
-                        { label: 'Select a vehicle...', value: '' },
-                        ...MOCK_VEHICLES.map(v => ({ label: `${v.reg} — ${v.name} (${v.capacity} kg)`, value: v.id }))
+                        { label: vehiclesQuery.isLoading ? 'Loading vehicles…' : 'Select a vehicle...', value: '' },
+                        ...(vehiclesQuery.data?.items ?? []).map((v) => ({
+                          label: `${v.registration_number} — ${v.name} (${Number(v.max_load_capacity_kg).toLocaleString()} kg)`,
+                          value: v.id,
+                        })),
                       ]}
                       {...field}
                     />
@@ -135,11 +224,15 @@ export function NewTripPage() {
                   name="driver_id"
                   control={control}
                   render={({ field }) => (
-                    <Select 
-                      label="Driver" 
+                    <Select
+                      label="Driver"
+                      hint={noDrivers ? 'No assignable drivers available.' : undefined}
                       options={[
-                        { label: 'Select a driver...', value: '' },
-                        ...MOCK_DRIVERS.map(d => ({ label: `${d.name} (Score: ${d.score}, Exp: ${d.expiry})`, value: d.id }))
+                        { label: driversQuery.isLoading ? 'Loading drivers…' : 'Select a driver...', value: '' },
+                        ...(driversQuery.data?.items ?? []).map((d) => ({
+                          label: `${d.full_name} (Score: ${Math.round(Number(d.safety_score))}, Exp: ${d.license_expiry})`,
+                          value: d.id,
+                        })),
                       ]}
                       {...field}
                     />
@@ -158,14 +251,15 @@ export function NewTripPage() {
                 <Controller
                   name="cargo_weight_kg"
                   control={control}
-                  render={({ field: { onChange, ...field } }) => (
-                    <Input 
-                      label="Cargo Weight (kg)" 
-                      type="number" 
-                      placeholder="e.g. 450" 
+                  render={({ field: { onChange, value, ...field } }) => (
+                    <Input
+                      label="Cargo Weight (kg)"
+                      type="number"
+                      placeholder="e.g. 450"
+                      value={value ?? ''}
                       onChange={(e) => onChange(e.target.valueAsNumber || undefined)}
-                      {...field} 
-                      error={errors.cargo_weight_kg?.message} 
+                      {...field}
+                      error={errors.cargo_weight_kg?.message}
                     />
                   )}
                 />
@@ -174,14 +268,15 @@ export function NewTripPage() {
                 <Controller
                   name="revenue"
                   control={control}
-                  render={({ field: { onChange, ...field } }) => (
-                    <Input 
-                      label="Expected Revenue (₹)" 
-                      type="number" 
-                      placeholder="Optional" 
+                  render={({ field: { onChange, value, ...field } }) => (
+                    <Input
+                      label="Expected Revenue (₹)"
+                      type="number"
+                      placeholder="Optional"
+                      value={value ?? ''}
                       onChange={(e) => onChange(e.target.valueAsNumber || undefined)}
-                      {...field} 
-                      error={errors.revenue?.message} 
+                      {...field}
+                      error={errors.revenue?.message}
                     />
                   )}
                 />
@@ -201,7 +296,11 @@ export function NewTripPage() {
           </div>
 
           <div className="pt-4 border-t border-line flex justify-end">
-            <Button type="submit" className="bg-signal hover:bg-signal/90 border-transparent text-white px-8">
+            <Button
+              type="submit"
+              isLoading={createTripMutation.isPending}
+              className="bg-signal hover:bg-signal/90 border-transparent text-white px-8"
+            >
               Create Trip
             </Button>
           </div>

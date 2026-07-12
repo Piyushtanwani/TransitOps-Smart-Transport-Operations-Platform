@@ -1,86 +1,113 @@
+import { useMemo, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
-import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiClient } from '../../api/client';
+import {
+  buildCompleteTripSchema,
+  getApiErrorMessage,
+  type CompleteTripInputs,
+  type Trip,
+} from '../../lib/schemas/trip';
 import { Modal } from '../../components/ui/Modal';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 
-// Refined schema for paired fuel logic
-const completeTripSchema = z.object({
-  end_odometer: z.coerce.number().positive('Must be positive'),
-  revenue: z.coerce.number().min(0, 'Cannot be negative').optional(),
-  fuel_liters: z.coerce.number().min(0).optional(),
-  fuel_cost: z.coerce.number().min(0).optional(),
-}).refine(data => {
-  // If one is provided, the other MUST be provided
-  const hasLiters = data.fuel_liters !== undefined && data.fuel_liters > 0;
-  const hasCost = data.fuel_cost !== undefined && data.fuel_cost > 0;
-  return hasLiters === hasCost;
-}, {
-  message: "Fuel liters and fuel cost must both be provided, or both left empty",
-  path: ["fuel_cost"]
-});
-
-type CompleteTripInputs = z.infer<typeof completeTripSchema>;
+const COMPLETE_FORM_FIELDS = ['end_odometer', 'revenue', 'fuel_liters', 'fuel_cost'] as const;
 
 interface CompleteTripModalProps {
   isOpen: boolean;
   onClose: () => void;
+  tripId: string;
   tripCode: string;
   startOdometer: number;
 }
 
-export function CompleteTripModal({ isOpen, onClose, tripCode, startOdometer }: CompleteTripModalProps) {
-  const { control, handleSubmit, formState: { errors }, watch, setError } = useForm<CompleteTripInputs>({
-    resolver: zodResolver(completeTripSchema),
+export function CompleteTripModal({ isOpen, onClose, tripId, tripCode, startOdometer }: CompleteTripModalProps) {
+  const queryClient = useQueryClient();
+  const [formError, setFormError] = useState<string | null>(null);
+
+  // end_odometer's floor depends on this trip's start_odometer.
+  const schema = useMemo(() => buildCompleteTripSchema(startOdometer), [startOdometer]);
+
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+    setError,
+  } = useForm<CompleteTripInputs>({
+    resolver: zodResolver(schema),
     defaultValues: {
       end_odometer: undefined,
       revenue: undefined,
       fuel_liters: undefined,
-      fuel_cost: undefined
-    }
+      fuel_cost: undefined,
+    },
   });
 
-  const endOdo = watch('end_odometer');
+  const completeMutation = useMutation({
+    mutationFn: async (payload: CompleteTripInputs) => {
+      const { data } = await apiClient.post<Trip>(`/trips/${tripId}/complete`, payload);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['trips'] });
+      queryClient.invalidateQueries({ queryKey: ['vehicles'] });
+      queryClient.invalidateQueries({ queryKey: ['drivers'] });
+      queryClient.invalidateQueries({ queryKey: ['kpis'] });
+      onClose();
+    },
+    onError: (error) => {
+      const { message, field } = getApiErrorMessage(error);
+      if (field && (COMPLETE_FORM_FIELDS as readonly string[]).includes(field)) {
+        setError(field as (typeof COMPLETE_FORM_FIELDS)[number], { type: 'server', message });
+      } else {
+        setFormError(message);
+      }
+    },
+  });
 
   const onSubmit = (data: CompleteTripInputs) => {
-    if (data.end_odometer < startOdometer) {
-      setError('end_odometer', { message: `Must be ≥ start (${startOdometer} km)` });
-      return;
-    }
-    console.log(`Completing trip ${tripCode}:`, data);
-    onClose();
+    setFormError(null);
+    completeMutation.mutate(data);
   };
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={`Complete Trip ${tripCode}`}>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        {formError && (
+          <div className="rounded-md border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger">
+            {formError}
+          </div>
+        )}
         <div className="grid grid-cols-2 gap-4">
           <Controller
             name="end_odometer"
             control={control}
-            render={({ field: { onChange, ...field } }) => (
-              <Input 
-                label="End Odometer (km)" 
-                type="number" 
+            render={({ field: { onChange, value, ...field } }) => (
+              <Input
+                label="End Odometer (km)"
+                type="number"
                 hint={`Start: ${startOdometer.toLocaleString()} km`}
+                value={value ?? ''}
                 onChange={(e) => onChange(e.target.valueAsNumber || undefined)}
                 error={errors.end_odometer?.message}
-                {...field} 
+                {...field}
               />
             )}
           />
           <Controller
             name="revenue"
             control={control}
-            render={({ field: { onChange, ...field } }) => (
-              <Input 
-                label="Final Revenue (₹)" 
-                type="number" 
+            render={({ field: { onChange, value, ...field } }) => (
+              <Input
+                label="Final Revenue (₹)"
+                type="number"
                 placeholder="Optional"
+                value={value ?? ''}
                 onChange={(e) => onChange(e.target.valueAsNumber || undefined)}
                 error={errors.revenue?.message}
-                {...field} 
+                {...field}
               />
             )}
           />
@@ -92,26 +119,28 @@ export function CompleteTripModal({ isOpen, onClose, tripCode, startOdometer }: 
             <Controller
               name="fuel_liters"
               control={control}
-              render={({ field: { onChange, ...field } }) => (
-                <Input 
-                  label="Fuel Added (Liters)" 
-                  type="number" 
+              render={({ field: { onChange, value, ...field } }) => (
+                <Input
+                  label="Fuel Added (Liters)"
+                  type="number"
+                  value={value ?? ''}
                   onChange={(e) => onChange(e.target.valueAsNumber || undefined)}
                   error={errors.fuel_liters?.message}
-                  {...field} 
+                  {...field}
                 />
               )}
             />
             <Controller
               name="fuel_cost"
               control={control}
-              render={({ field: { onChange, ...field } }) => (
-                <Input 
-                  label="Total Fuel Cost (₹)" 
-                  type="number" 
+              render={({ field: { onChange, value, ...field } }) => (
+                <Input
+                  label="Total Fuel Cost (₹)"
+                  type="number"
+                  value={value ?? ''}
                   onChange={(e) => onChange(e.target.valueAsNumber || undefined)}
                   error={errors.fuel_cost?.message}
-                  {...field} 
+                  {...field}
                 />
               )}
             />
@@ -120,7 +149,11 @@ export function CompleteTripModal({ isOpen, onClose, tripCode, startOdometer }: 
 
         <div className="flex justify-end space-x-3 pt-6 border-t border-line">
           <Button variant="ghost" onClick={onClose} type="button">Cancel</Button>
-          <Button type="submit" className="bg-ok hover:bg-ok/90 text-white border-transparent">
+          <Button
+            type="submit"
+            isLoading={completeMutation.isPending}
+            className="bg-ok hover:bg-ok/90 text-white border-transparent"
+          >
             Mark Completed
           </Button>
         </div>

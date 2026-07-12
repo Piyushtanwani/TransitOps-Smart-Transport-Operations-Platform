@@ -12,7 +12,7 @@ import { useApiError } from '../../hooks/useApiError';
 
 const roleOptions = [
   { label: 'Fleet Manager', value: 'fleet_manager' },
-  { label: 'Dispatcher', value: 'dispatcher' },
+  { label: 'Dispatcher', value: 'driver' },
   { label: 'Safety Officer', value: 'safety_officer' },
   { label: 'Financial Analyst', value: 'financial_analyst' },
 ];
@@ -24,39 +24,44 @@ const loginSchema = z.object({
 
 type LoginFormInputs = z.infer<typeof loginSchema>;
 
+interface LocationState {
+  from?: { pathname: string };
+}
+
 export function LoginPage() {
   const { login } = useAuth();
-  const { handleApiError } = useApiError();
+  const { handleApiError, getApiErrorDetail } = useApiError();
   const navigate = useNavigate();
   const location = useLocation();
-  const [role, setRole] = useState('dispatcher');
+  const [role, setRole] = useState('driver');
   const [loginError, setLoginError] = useState<string | null>(null);
-  
-  const from = (location.state as any)?.from?.pathname || '/dashboard';
+
+  const state = location.state as LocationState | null;
+  const from = state?.from?.pathname || '/dashboard';
 
   const { control, handleSubmit, setValue, formState: { errors, isSubmitting } } = useForm<LoginFormInputs>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: 'dispatcher@transitops.in',
-      password: 'password123',
+      email: 'dispatch@transitops.in',
+      password: 'Transit@123',
     }
   });
 
   const handleRoleSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selected = e.target.value;
     setRole(selected);
-    if (selected === 'dispatcher') {
+    if (selected === 'driver') {
       setValue('email', 'dispatch@transitops.in');
-      setValue('password', 'password123');
+      setValue('password', 'Transit@123');
     } else if (selected === 'fleet_manager') {
       setValue('email', 'manager@transitops.in');
-      setValue('password', 'password123');
+      setValue('password', 'Transit@123');
     } else if (selected === 'safety_officer') {
       setValue('email', 'safety@transitops.in');
-      setValue('password', 'password123');
+      setValue('password', 'Transit@123');
     } else if (selected === 'financial_analyst') {
       setValue('email', 'finance@transitops.in');
-      setValue('password', 'password123');
+      setValue('password', 'Transit@123');
     }
   };
 
@@ -65,9 +70,10 @@ export function LoginPage() {
     try {
       await login(data.email, data.password);
       navigate(from, { replace: true });
-    } catch (err: any) {
-      if (err.response?.status === 401) {
-        setLoginError('Invalid credentials.');
+    } catch (err: unknown) {
+      const detail = getApiErrorDetail(err);
+      if (detail.status === 401) {
+        setLoginError(detail.message);
       } else {
         handleApiError(err);
       }

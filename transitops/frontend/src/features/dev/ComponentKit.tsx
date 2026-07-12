@@ -42,7 +42,7 @@ export function ComponentKit() {
           </div>
           <div className="flex flex-wrap gap-4 items-center">
             <RoleBadge role="fleet_manager" />
-            <RoleBadge role="dispatcher" />
+            <RoleBadge role="driver" />
             <RoleBadge role="safety_officer" />
           </div>
         </div>

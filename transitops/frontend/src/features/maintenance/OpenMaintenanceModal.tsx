@@ -1,6 +1,11 @@
+import { useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { isAxiosError } from 'axios';
+import { apiClient } from '../../api/client';
+import type { ErrorEnvelope } from '../../types/api';
 import { Modal } from '../../components/ui/Modal';
 import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
@@ -15,6 +20,8 @@ const openMaintenanceSchema = z.object({
 
 type OpenMaintenanceInputs = z.infer<typeof openMaintenanceSchema>;
 
+const emptyValues: OpenMaintenanceInputs = { vehicle_id: '', title: '', description: '' };
+
 interface OpenMaintenanceModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -22,15 +29,43 @@ interface OpenMaintenanceModalProps {
 }
 
 export function OpenMaintenanceModal({ isOpen, onClose, availableVehicles }: OpenMaintenanceModalProps) {
+  const queryClient = useQueryClient();
+  const [serverError, setServerError] = useState<string | null>(null);
+
+  // Parent remounts this component (via a `key` tied to isOpen) each time it opens, so
+  // form state and serverError below always start fresh without needing a reset effect.
   const { control, handleSubmit, formState: { errors } } = useForm<OpenMaintenanceInputs>({
     resolver: zodResolver(openMaintenanceSchema),
-    defaultValues: { vehicle_id: '', title: '', description: '' }
+    defaultValues: emptyValues,
+  });
+
+  const mutation = useMutation({
+    mutationFn: async (payload: { vehicle_id: string; title: string; description?: string }) => {
+      const { data } = await apiClient.post('/maintenance', payload);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['maintenance'] });
+      queryClient.invalidateQueries({ queryKey: ['vehicles'] });
+      queryClient.invalidateQueries({ queryKey: ['kpis'] });
+      onClose();
+    },
+    onError: (error: unknown) => {
+      if (isAxiosError<ErrorEnvelope>(error) && error.response?.data?.error) {
+        setServerError(error.response.data.error.message);
+      } else {
+        setServerError('Failed to open maintenance record. Please try again.');
+      }
+    },
   });
 
   const onSubmit = (data: OpenMaintenanceInputs) => {
-    console.log('Opening maintenance:', data);
-    // TODO: show toast "Moved to In Shop"
-    onClose();
+    setServerError(null);
+    mutation.mutate({
+      vehicle_id: data.vehicle_id,
+      title: data.title,
+      description: data.description || undefined,
+    });
   };
 
   return (
@@ -41,8 +76,8 @@ export function OpenMaintenanceModal({ isOpen, onClose, availableVehicles }: Ope
           control={control}
           render={({ field }) => (
             <div>
-              <Select 
-                label="Vehicle" 
+              <Select
+                label="Vehicle"
                 options={[
                   { label: 'Select an available vehicle...', value: '' },
                   ...availableVehicles.map(v => ({ label: `${v.reg} — ${v.name}`, value: v.id }))
@@ -54,7 +89,7 @@ export function OpenMaintenanceModal({ isOpen, onClose, availableVehicles }: Ope
             </div>
           )}
         />
-        
+
         <Controller
           name="title"
           control={control}
@@ -71,9 +106,15 @@ export function OpenMaintenanceModal({ isOpen, onClose, availableVehicles }: Ope
           )}
         />
 
+        {serverError && (
+          <div className="rounded-md border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger">
+            {serverError}
+          </div>
+        )}
+
         <div className="flex justify-end space-x-3 pt-4 border-t border-line">
           <Button variant="ghost" onClick={onClose} type="button">Cancel</Button>
-          <Button type="submit" className="bg-signal hover:bg-signal/90 text-white border-transparent">
+          <Button type="submit" isLoading={mutation.isPending} className="bg-signal hover:bg-signal/90 text-white border-transparent">
             Open Record
           </Button>
         </div>
