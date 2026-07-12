@@ -234,7 +234,7 @@ cd backend && . .venv/bin/activate && pytest -q -k advisor
 
 ---
 
-## [ ] BE-16 — (T2, only after CP4 if everything is green) MCP server
+## [x] BE-16 — (T2, only after CP4 if everything is green) MCP server
 **Depends on:** BE-15, all suites green, clock ≥ 7:00
 **Deliverables**
 - `backend/mcp_server.py` using `fastmcp`: expose the read-only tool registry over stdio with a service-role scope (financial_analyst-equivalent); README note on connecting from Claude Desktop; add `fastmcp` to a `[project.optional-dependencies].mcp` extra so core install stays lean.

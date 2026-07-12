@@ -39,7 +39,7 @@
 | BE-13 | AI: client, knowledge/context, settings API | Ismail | DONE |
 | BE-14 | AI: tool registry + chat loop + sessions | Ismail | DONE |
 | BE-15 | AI: Trip Advisor endpoint | Ismail | DONE |
-| BE-16 | (T2) MCP server over tool registry | Ismail | TODO |
+| BE-16 | (T2) MCP server over tool registry | Ismail | DONE |
 | FE-01 | Vite scaffold + Tailwind tokens + fonts + theme toggle | Piyush | TODO |
 | FE-02 | Mockup fidelity review + ui/ component kit | Piyush | TODO |
 | FE-03 | API client + AuthContext + router guards + Login | Piyush | TODO |

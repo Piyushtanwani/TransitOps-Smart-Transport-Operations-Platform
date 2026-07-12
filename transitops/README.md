@@ -35,6 +35,24 @@ This repository-ready pack contains **everything an AI coding agent (Claude Code
 | `tasks/TASKS-3-PIYUSH-FRONTEND.md` | Section 3 — Frontend (FE-01…FE-16) | Piyush |
 | `.env.example` | All environment variables | All |
 
+## MCP server (T2 stretch, BE-16)
+
+`backend/mcp_server.py` exposes the same read-only AI tool registry
+(`app/services/ai/tools.py`) over the MCP stdio transport, so any MCP client —
+including **Claude Desktop** — can query the fleet directly.
+
+- Install the extra: `pip install -e ".[mcp]"` (adds `fastmcp`).
+- Run: `python mcp_server.py` (from `backend/`).
+- Auth: runs with a fixed service role equivalent to `financial_analyst` (the
+  broadest read scope). Per-user MCP auth is the production hardening step.
+- Connect from Claude Desktop: add to its MCP config —
+  ```json
+  { "mcpServers": { "transitops": {
+      "command": "python",
+      "args": ["/absolute/path/to/backend/mcp_server.py"]
+  } } }
+  ```
+
 ## Non-negotiables (from the judges)
 
 - PostgreSQL running locally/Docker. **No Firebase, Supabase, or MongoDB Atlas.**
