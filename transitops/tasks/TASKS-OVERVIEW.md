@@ -26,7 +26,7 @@
 | DB-10 | DB ops: reset target, index review, EXPLAIN notes | Afif | TODO |
 | BE-01 | Backend scaffold: pyproject, app skeleton, health, Makefile | Ismail | DONE |
 | BE-02 | Core: settings, security (JWT/bcrypt), deps, error framework | Ismail | DONE |
-| BE-03 | Auth endpoints: login / refresh / me (+tests) | Ismail | TODO |
+| BE-03 | Auth endpoints: login / refresh / me (+tests) | Ismail | DONE |
 | BE-04 | Users CRUD (FM) + `require_roles` | Ismail | TODO |
 | BE-05 | Vehicles CRUD + retire/unretire + `dispatchable` | Ismail | TODO |
 | BE-06 | Drivers CRUD + status + expiring + `assignable` | Ismail | TODO |

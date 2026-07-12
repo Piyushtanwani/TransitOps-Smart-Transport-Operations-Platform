@@ -39,7 +39,7 @@ cd backend && . .venv/bin/activate && pytest -q app/tests/test_security.py
 
 ---
 
-## [ ] BE-03 — Auth endpoints: login / refresh / me (+tests)
+## [x] BE-03 — Auth endpoints: login / refresh / me (+tests)
 **Depends on:** BE-02, DB-03
 **Deliverables**
 - `schemas/auth.py`, `api/v1/auth.py`: `POST /auth/login`, `POST /auth/refresh` (rotation: respond with a fresh pair; reject non-refresh tokens), `GET /auth/me` — shapes exactly per `docs/03 §4 Auth`, identical 401 message for unknown email vs wrong password.

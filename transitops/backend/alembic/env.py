@@ -11,8 +11,12 @@ from app.db.base import Base  # imports app.db.registry → every model module
 
 config = context.config
 
-# Connection URL comes from the environment / .env, never hardcoded in alembic.ini.
-config.set_main_option("sqlalchemy.url", get_settings().DATABASE_URL)
+# URL precedence: an explicitly-set (non-placeholder) config URL wins — this lets the
+# test harness point Alembic at transitops_test. Otherwise fall back to app settings.
+_url = config.get_main_option("sqlalchemy.url")
+if not _url or _url.startswith("driver://"):
+    _url = get_settings().DATABASE_URL
+config.set_main_option("sqlalchemy.url", _url)
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
