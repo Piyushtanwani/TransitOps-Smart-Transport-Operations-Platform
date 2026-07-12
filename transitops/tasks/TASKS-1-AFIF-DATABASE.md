@@ -39,7 +39,7 @@ cd backend && . .venv/bin/activate && python -c "from app.db.session import engi
 
 ---
 
-## [ ] DB-03 — Models: users, vehicles, drivers
+## [x] DB-03 — Models: users, vehicles, drivers
 **Depends on:** DB-02
 **Deliverables**
 - `models/user.py`, `models/vehicle.py`, `models/driver.py` — columns, types, defaults, UNIQUEs, CHECK constraints and indexes **exactly** as `docs/02 §3` (use `CheckConstraint("...", name="ck_users_email")` etc. so names match the DDL; `server_default=func.now()` + `onupdate=func.now()` for timestamps; UUID PKs via `server_default=text("gen_random_uuid()")`).

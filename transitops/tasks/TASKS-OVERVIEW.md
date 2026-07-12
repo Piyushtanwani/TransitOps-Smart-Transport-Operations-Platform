@@ -16,7 +16,7 @@
 |---|---|---|---|
 | DB-01 | Postgres via compose + test DB + git identity | Afif | DONE |
 | DB-02 | DB wiring: config, session, base, enums | Afif | DONE |
-| DB-03 | Models: users, vehicles, drivers | Afif | TODO |
+| DB-03 | Models: users, vehicles, drivers | Afif | DONE |
 | DB-04 | Models: trips, maintenance, fuel, expenses (+partial indexes) | Afif | TODO |
 | DB-05 | Models: ai_settings, chat, audit | Afif | TODO |
 | DB-06 | Alembic init + `0001_initial_schema` + schema.sql | Afif | TODO |
