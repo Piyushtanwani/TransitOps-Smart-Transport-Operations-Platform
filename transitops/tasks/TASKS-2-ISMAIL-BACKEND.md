@@ -23,7 +23,7 @@ uvicorn app.main:app --port 8000 & sleep 2 && curl -s localhost:8000/api/v1/heal
 
 ---
 
-## [ ] BE-02 — Core: security (JWT/bcrypt), deps, error framework
+## [x] BE-02 — Core: security (JWT/bcrypt), deps, error framework
 **Depends on:** BE-01, DB-02
 **Deliverables**
 - `core/security.py`: `hash_password`, `verify_password` (passlib bcrypt, rounds 12), `create_access_token(user)` (claims `sub`, `role`, `exp` = now+`JWT_ACCESS_TTL_MIN`), `create_refresh_token(user)` (`jti` uuid, exp days), `decode_token(token) -> dict` raising on invalid/expired.

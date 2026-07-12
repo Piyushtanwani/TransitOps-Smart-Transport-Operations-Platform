@@ -25,7 +25,7 @@
 | DB-09 | `db/queries.py`: KPI + report SQL functions | Afif | TODO |
 | DB-10 | DB ops: reset target, index review, EXPLAIN notes | Afif | TODO |
 | BE-01 | Backend scaffold: pyproject, app skeleton, health, Makefile | Ismail | DONE |
-| BE-02 | Core: settings, security (JWT/bcrypt), deps, error framework | Ismail | TODO |
+| BE-02 | Core: settings, security (JWT/bcrypt), deps, error framework | Ismail | DONE |
 | BE-03 | Auth endpoints: login / refresh / me (+tests) | Ismail | TODO |
 | BE-04 | Users CRUD (FM) + `require_roles` | Ismail | TODO |
 | BE-05 | Vehicles CRUD + retire/unretire + `dispatchable` | Ismail | TODO |
@@ -88,3 +88,4 @@ FE-14/15 need BE-13..15 · FE-16 last
 |---|---|---|---|
 | BE-01 | Ismail | Makefile `install` target uses `python3.12` (host `python` is 3.9; project needs 3.11+). No contract change. | – |
 | BE-01 | Ismail | DB section (DB-02..DB-09) was unstarted; per CLAUDE.md §3.4 the backend owner implements it against `docs/02` (frozen DDL) to unblock BE tasks. Committed under the DB task messages, DB rows flipped as delivered. | – |
+| BE-02 | Ismail | Pinned `bcrypt>=4.1,<5.0`: passlib 1.7.4 hard-fails on bcrypt 5.x (>72-byte behavior change). Build-dep only; no contract change. | – |
