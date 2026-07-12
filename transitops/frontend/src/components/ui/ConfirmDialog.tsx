@@ -1,10 +1,11 @@
+import type { ReactNode } from 'react';
 import { Modal } from './Modal';
 import { Button } from './Button';
 
 interface ConfirmDialogProps {
   isOpen: boolean;
   title: string;
-  message: string;
+  message: ReactNode;
   confirmText?: string;
   cancelText?: string;
   isDestructive?: boolean;
@@ -25,7 +26,7 @@ export function ConfirmDialog({
   return (
     <Modal isOpen={isOpen} onClose={onCancel} title={title}>
       <div className="space-y-6">
-        <p className="text-ink text-sm leading-relaxed">{message}</p>
+        <div className="text-ink text-sm leading-relaxed">{message}</div>
         <div className="flex justify-end space-x-3 pt-4 border-t border-line">
           <Button variant="ghost" onClick={onCancel}>{cancelText}</Button>
           <Button 

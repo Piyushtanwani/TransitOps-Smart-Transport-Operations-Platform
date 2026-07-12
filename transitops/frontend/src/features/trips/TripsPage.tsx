@@ -1,6 +1,9 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
 import { StatusBadge } from '../../components/ui/StatusBadge';
+import { CompleteTripModal } from './CompleteTripModal';
+import { DispatchTripModal } from './DispatchTripModal';
 
 const trips = [
   { code: 'TRP-0001', route: 'MUM → PNE', vehicle: 'MH-01-AB-1234', driver: 'Alex Manager', cargo: 450, status: 'dispatched', date: '2026-07-12' },
@@ -10,6 +13,9 @@ const trips = [
 ];
 
 export function TripsPage() {
+  const [completingTrip, setCompletingTrip] = useState<typeof trips[0] | null>(null);
+  const [dispatchingTrip, setDispatchingTrip] = useState<typeof trips[0] | null>(null);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -50,16 +56,42 @@ export function TripsPage() {
                   <StatusBadge status={trip.status} />
                 </td>
                 <td className="px-6 py-4 font-data text-ink-mute">{trip.date}</td>
-                <td className="px-6 py-4">
-                  <button className="text-signal hover:underline font-medium text-sm">
-                    {trip.status === 'draft' ? 'Dispatch' : trip.status === 'dispatched' ? 'Complete' : 'View'}
-                  </button>
+                <td className="px-6 py-4 space-x-2">
+                  {trip.status === 'draft' && (
+                    <button onClick={() => setDispatchingTrip(trip)} className="text-signal hover:underline font-medium text-sm">Dispatch</button>
+                  )}
+                  {trip.status === 'dispatched' && (
+                    <button onClick={() => setCompletingTrip(trip)} className="text-signal hover:underline font-medium text-sm">Complete</button>
+                  )}
+                  {(trip.status === 'completed' || trip.status === 'cancelled') && (
+                    <button className="text-signal hover:underline font-medium text-sm">View</button>
+                  )}
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      {dispatchingTrip && (
+        <DispatchTripModal 
+          isOpen={true} 
+          onClose={() => setDispatchingTrip(null)}
+          tripCode={dispatchingTrip.code}
+          vehicleReg={dispatchingTrip.vehicle}
+          driverName={dispatchingTrip.driver}
+          cargoWeight={dispatchingTrip.cargo}
+        />
+      )}
+
+      {completingTrip && (
+        <CompleteTripModal
+          isOpen={true}
+          onClose={() => setCompletingTrip(null)}
+          tripCode={completingTrip.code}
+          startOdometer={45210} 
+        />
+      )}
     </div>
   );
 }

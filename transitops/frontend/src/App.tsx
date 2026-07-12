@@ -10,6 +10,10 @@ import { DriversPage } from './features/drivers/DriversPage';
 import { ComponentKit } from './features/dev/ComponentKit';
 import { TripsPage } from './features/trips/TripsPage';
 import { NewTripPage } from './features/trips/NewTripPage';
+import { MaintenancePage } from './features/maintenance/MaintenancePage';
+import { FuelExpensesPage } from './features/finance/FuelExpensesPage';
+import { AnalyticsPage } from './features/analytics/AnalyticsPage';
+import { SettingsPage } from './features/settings/SettingsPage';
 
 function App() {
   return (
@@ -33,17 +37,17 @@ function App() {
                 <Route path="/trips/new" element={<NewTripPage />} />
               </Route>
               
-              <Route path="/maintenance" element={<div className="p-6">Maintenance Placeholder</div>} />
+              <Route path="/maintenance" element={<MaintenancePage />} />
               
               {/* Fuel and Expenses accessible by FM, FA */}
               <Route element={<RequireRole roles={['fleet_manager', 'financial_analyst']} />}>
-                <Route path="/fuel" element={<div className="p-6">Fuel & Expenses Placeholder</div>} />
-                <Route path="/analytics" element={<div className="p-6">Analytics Placeholder</div>} />
+                <Route path="/fuel" element={<FuelExpensesPage />} />
               </Route>
               
-              {/* Settings (Users, AI) accessible by FM only */}
+              {/* Reports and Admin FM only (mostly) */}
               <Route element={<RequireRole roles={['fleet_manager']} />}>
-                <Route path="/settings" element={<div className="p-6">Settings Placeholder</div>} />
+                <Route path="/analytics" element={<AnalyticsPage />} />
+                <Route path="/settings" element={<SettingsPage />} />
               </Route>
             </Route>
           </Route>

@@ -2,6 +2,7 @@ import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { ThemeToggle } from '../ThemeToggle';
 import { useAuth } from '../../auth/AuthContext';
 import type { Role } from '../../types/api';
+import { ChatWidget } from '../ui/ChatWidget';
 
 const ALL_NAV_ITEMS = [
   { label: 'Dashboard', path: '/dashboard', roles: ['fleet_manager', 'dispatcher', 'safety_officer', 'financial_analyst'] },
@@ -99,6 +100,8 @@ export function AppShell() {
           <Outlet />
         </main>
       </div>
+
+      <ChatWidget />
     </div>
   );
 }
