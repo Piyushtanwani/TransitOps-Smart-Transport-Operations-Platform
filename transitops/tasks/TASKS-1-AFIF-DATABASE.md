@@ -24,7 +24,7 @@ git config user.name && git config user.email
 
 ---
 
-## [ ] DB-02 — DB wiring: config, session, declarative base, enums
+## [x] DB-02 — DB wiring: config, session, declarative base, enums
 **Depends on:** DB-01, BE-01 (backend skeleton exists; if BE-01 not landed, create the minimal `backend/app/` package yourself per CLAUDE.md §4 — coordinate at CP1)
 **Deliverables**
 - `backend/app/db/session.py`: `engine = create_engine(settings.DATABASE_URL, pool_pre_ping=True)`, `SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)`.
