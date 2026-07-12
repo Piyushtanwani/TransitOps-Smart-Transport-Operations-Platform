@@ -86,7 +86,7 @@ cd backend && . .venv/bin/activate && pytest -q -k "vehicle or br1 or br2"
 
 ---
 
-## [ ] BE-06 — Drivers CRUD + status + expiring + `assignable`
+## [x] BE-06 — Drivers CRUD + status + expiring + `assignable`
 **Depends on:** BE-05
 **Deliverables**
 - `schemas/driver.py`, `api/v1/drivers.py`, `services/driver_service.py`:
@@ -102,7 +102,7 @@ cd backend && . .venv/bin/activate && pytest -q -k "driver or br3"
 
 ---
 
-## [ ] BE-07 — Trip service + lifecycle endpoints (THE core task)
+## [x] BE-07 — Trip service + lifecycle endpoints (THE core task)
 **Depends on:** BE-06
 **Deliverables**
 - `services/trip_service.py` implementing `create`, `dispatch`, `complete`, `cancel` **exactly** per the transaction recipe in `docs/04 §3` — fixed lock order trip→vehicle→driver, every BR re-checked under locks, `IntegrityError` from partial indexes caught → 409 `VEHICLE_NOT_AVAILABLE`/`DRIVER_NOT_AVAILABLE`. `trip_code` from `trip_code_seq` rendered `TRP-{n:04d}`. `complete` writes odometer forward + optional linked fuel log (both-or-neither validated in schema). Audit rows on every transition (`services/audit.py` helper: `audit(db, actor, action, entity)`).
@@ -117,7 +117,7 @@ cd backend && . .venv/bin/activate && pytest -q app/tests/test_business_rules.py
 
 ---
 
-## [ ] BE-08 — Maintenance service + endpoints (BR-9, BR-10)
+## [x] BE-08 — Maintenance service + endpoints (BR-9, BR-10)
 **Depends on:** BE-07
 **Deliverables**
 - `services/maintenance_service.py`: `create` (lock vehicle; must be `available`; on_trip → 409 naming active trip code; retired → 409; second open job blocked by partial index → 409 `VEHICLE_HAS_OPEN_MAINTENANCE`; sets `in_shop`), `close` (`{cost?}`, stamps `closed_at`, vehicle → `available` unless retired).
@@ -132,7 +132,7 @@ cd backend && . .venv/bin/activate && pytest -q -k "br9 or br10 or maintenance"
 
 ---
 
-## [ ] BE-09 — Fuel logs + expenses endpoints
+## [x] BE-09 — Fuel logs + expenses endpoints
 **Depends on:** BE-08
 **Deliverables**
 - `schemas/fuel.py`, `schemas/expense.py`, `api/v1/fuel_logs.py`, `api/v1/expenses.py`: GET (filters `vehicle_id,date_from,date_to`, pagination) + POST per spec; role gates per matrix (fuel create: FM/D/FA; expense create: FM/FA).
@@ -146,7 +146,7 @@ cd backend && . .venv/bin/activate && pytest -q -k "fuel or expense"
 
 ---
 
-## [ ] BE-10 — Dashboard KPIs + charts endpoints
+## [x] BE-10 — Dashboard KPIs + charts endpoints
 **Depends on:** BE-09, DB-09
 **Deliverables**
 - `api/v1/dashboard.py` + `services/report_service.py` thin wrappers over `app.db.queries`: `GET /dashboard/kpis?type=&region=&status=` (vehicle KPIs filtered; trip/driver KPIs global; plus `alerts.expiring_licenses` count ≤30 d) and `GET /dashboard/charts` returning the three series per spec shapes.
@@ -160,7 +160,7 @@ cd backend && . .venv/bin/activate && pytest -q -k kpi && curl -s "localhost:800
 
 ---
 
-## [ ] BE-11 — Reports endpoint + CSV export
+## [x] BE-11 — Reports endpoint + CSV export
 **Depends on:** BE-10
 **Deliverables**
 - `GET /reports/vehicles` (FA/FM) returning `db.queries.get_vehicle_report_rows` + a totals object; `GET /reports/vehicles.csv` → `StreamingResponse`, `text/csv`, `Content-Disposition: attachment; filename=transitops_vehicle_report_<YYYY-MM-DD>.csv`, header row matching table columns.
@@ -174,7 +174,7 @@ cd backend && . .venv/bin/activate && pytest -q -k report
 
 ---
 
-## [ ] BE-12 — GATE: Suites A/B/C green together
+## [x] BE-12 — GATE: Suites A/B/C green together
 **Depends on:** BE-11 (Suites A+B exist from prior tasks)
 **Deliverables**
 - `tests/test_e2e_workflow.py` — Suite C: the brief's 9-step Van-05/Alex flow per `docs/07 §4`, with printed narration for the live demo (`pytest -q -k e2e -s`).

@@ -21,7 +21,7 @@
 | DB-05 | Models: ai_settings, chat, audit | Afif | DONE |
 | DB-06 | Alembic init + `0001_initial_schema` + schema.sql | Afif | DONE |
 | DB-07 | Idempotent seed with demo dataset | Afif | DONE |
-| DB-08 | Suite D: schema-constraint tests | Afif | TODO |
+| DB-08 | Suite D: schema-constraint tests | Afif | DONE |
 | DB-09 | `db/queries.py`: KPI + report SQL functions | Afif | DONE |
 | DB-10 | DB ops: reset target, index review, EXPLAIN notes | Afif | TODO |
 | BE-01 | Backend scaffold: pyproject, app skeleton, health, Makefile | Ismail | DONE |
@@ -29,13 +29,13 @@
 | BE-03 | Auth endpoints: login / refresh / me (+tests) | Ismail | DONE |
 | BE-04 | Users CRUD (FM) + `require_roles` | Ismail | DONE |
 | BE-05 | Vehicles CRUD + retire/unretire + `dispatchable` | Ismail | DONE |
-| BE-06 | Drivers CRUD + status + expiring + `assignable` | Ismail | TODO |
-| BE-07 | Trip service + lifecycle endpoints (BR-2…BR-8) | Ismail | TODO |
-| BE-08 | Maintenance service + endpoints (BR-9, BR-10) | Ismail | TODO |
-| BE-09 | Fuel logs + expenses endpoints | Ismail | TODO |
-| BE-10 | Dashboard KPIs + charts endpoints | Ismail | TODO |
-| BE-11 | Reports endpoint + CSV export | Ismail | TODO |
-| BE-12 | GATE: Suites A/B/C green | Ismail | TODO |
+| BE-06 | Drivers CRUD + status + expiring + `assignable` | Ismail | DONE |
+| BE-07 | Trip service + lifecycle endpoints (BR-2…BR-8) | Ismail | DONE |
+| BE-08 | Maintenance service + endpoints (BR-9, BR-10) | Ismail | DONE |
+| BE-09 | Fuel logs + expenses endpoints | Ismail | DONE |
+| BE-10 | Dashboard KPIs + charts endpoints | Ismail | DONE |
+| BE-11 | Reports endpoint + CSV export | Ismail | DONE |
+| BE-12 | GATE: Suites A/B/C green | Ismail | DONE |
 | BE-13 | AI: client, knowledge/context, settings API | Ismail | TODO |
 | BE-14 | AI: tool registry + chat loop + sessions | Ismail | TODO |
 | BE-15 | AI: Trip Advisor endpoint | Ismail | TODO |

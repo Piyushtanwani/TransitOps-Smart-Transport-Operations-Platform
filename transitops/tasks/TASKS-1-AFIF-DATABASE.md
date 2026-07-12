@@ -122,7 +122,7 @@ docker exec transitops-db psql -U transitops -d transitops -c "SELECT status, CO
 
 ---
 
-## [ ] DB-08 — Suite D: schema-constraint tests
+## [x] DB-08 — Suite D: schema-constraint tests
 **Depends on:** DB-07 (and BE-01 test scaffolding; if `conftest.py` absent, create the minimal engine/session fixtures yourself against `transitops_test` per `docs/07 §1`)
 **Deliverables**
 - `backend/app/tests/test_schema_constraints.py` per `docs/07 §5`: negative capacity CHECK → `IntegrityError`; invalid email CHECK; duplicate registration UNIQUE; **second `dispatched` trip for same vehicle via raw ORM insert → `IntegrityError` from `uq_trips_active_vehicle`**; duplicate open maintenance per vehicle; `ck_trips_completed_fields`; vehicle delete with trips → FK RESTRICT error.

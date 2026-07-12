@@ -118,12 +118,21 @@ def _sweep_body(key: str | None) -> dict | None:
             "acquisition_cost": 500000,
             "region": "North",
         }
+    if key == "driver":
+        return {
+            "full_name": "Sweep Driver",
+            "license_number": f"LIC-{uuid.uuid4().hex[:8]}",
+            "license_category": "LMV",
+            "license_expiry": "2030-01-01",
+            "contact_number": "9876500000",
+        }
     return None
 
 
 _ALL_READ = {"fleet_manager": 200, "driver": 200, "safety_officer": 200, "financial_analyst": 200}
 _FM_ONLY_CREATE = {"fleet_manager": 201, "driver": 403, "safety_officer": 403, "financial_analyst": 403}
 _FM_ONLY_LIST = {"fleet_manager": 200, "driver": 403, "safety_officer": 403, "financial_analyst": 403}
+_FM_SO_CREATE = {"fleet_manager": 201, "driver": 403, "safety_officer": 201, "financial_analyst": 403}
 
 # (path, method, body_key, {role: expected_status})
 RBAC_MATRIX: list[tuple] = [
@@ -131,6 +140,8 @@ RBAC_MATRIX: list[tuple] = [
     ("/users", "POST", "user", _FM_ONLY_CREATE),
     ("/vehicles", "GET", None, _ALL_READ),
     ("/vehicles", "POST", "vehicle", _FM_ONLY_CREATE),
+    ("/drivers", "GET", None, _ALL_READ),
+    ("/drivers", "POST", "driver", _FM_SO_CREATE),
 ]
 
 _SWEEP_IDS = [f"{m}{p}" for (p, m, _, _) in RBAC_MATRIX]
