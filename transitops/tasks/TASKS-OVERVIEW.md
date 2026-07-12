@@ -91,3 +91,6 @@ FE-14/15 need BE-13..15 · FE-16 last
 | BE-02 | Ismail | Pinned `bcrypt>=4.1,<5.0`: passlib 1.7.4 hard-fails on bcrypt 5.x (>72-byte behavior change). Build-dep only; no contract change. | – |
 | BE-04 | Ismail | Added domain code `DUPLICATE_EMAIL` (409, field `email`) for user create; docs/03 §4 already required this envelope but the code was unlisted. | docs/03 §2 |
 | BE-05 | Ismail | Added domain code `VEHICLE_HAS_HISTORY` (409) for delete-blocked-by-FK-RESTRICT; docs/03 §4 required the 409 but the code was unlisted. | docs/03 §2 |
+| post-freeze | Ismail | OpenRouter API key now admin-settable from the UI, stored in `ai_settings.openrouter_api_key` (migration 0002); DB key wins, env fallback; FM GET exposes `openrouter_key_set` flag only — raw key never returned. | docs/03 §4 AI |
+| post-freeze | Ismail | Production hardening: security headers + gzip, catch-all 500 envelope, friendly field-targeted login errors (EMAIL_NOT_FOUND/INCORRECT_PASSWORD/ACCOUNT_DISABLED — replaces the no-enumeration message by product decision, offset by 429 TOO_MANY_ATTEMPTS rate limiting), humanized validation messages, DB pool sizing. | docs/03 §2/§4 |
+| post-freeze | Ismail | Added AI insights endpoints (daily briefing, maintenance-risk ranking, expense-anomaly detection) under /ai/insights — deterministic cores + optional LLM narrative via OpenRouter. | docs/03 §4 AI |

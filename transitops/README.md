@@ -1,62 +1,140 @@
-# TransitOps — AI Build Context Pack
+# TransitOps — Smart Transport Operations Platform
 
-**Event:** Odoo Hackathon (8 hours) · **Team:** Piyush (Frontend) · Ismail (Backend) · Afif (Database)
+A full-stack fleet management system for logistics companies: vehicles, drivers, trip
+dispatching, maintenance, fuel & expenses, analytics, and an AI copilot — everything
+persisted in PostgreSQL, every business rule enforced server-side.
 
-This repository-ready pack contains **everything an AI coding agent (Claude Code, Cursor, Windsurf, Copilot Workspace) needs to build TransitOps end-to-end with zero additional human context.** Drop these files into the root of an empty git repository and instruct the agent: *"Read CLAUDE.md, then execute your assigned task file."*
+**Stack:** FastAPI · SQLAlchemy 2.0 · PostgreSQL 16 · Alembic · React 18 + TypeScript ·
+Vite · Tailwind CSS · TanStack Query · Recharts · OpenRouter (AI)
 
-## How to use (per team member)
+---
 
-1. `git clone` the shared repo containing this pack.
-2. Open your AI coding tool in the repo root.
-3. Prompt: `Read CLAUDE.md and docs/. You are executing tasks/TASKS-<N>-<YOURNAME>-<AREA>.md. Complete tasks strictly in order, respecting the Depends-on column. After each task: run its verification command, mark the checkbox [x], update tasks/TASKS-OVERVIEW.md, and commit with the given message.`
-4. Sync with teammates at the checkpoints defined in `tasks/TASKS-OVERVIEW.md` (end of Hour 1, 3, 5, 7).
+## Quickstart
 
-## File map
+Prerequisites: Docker, Python 3.11+, Node 18+.
 
-| File | Purpose | Primary owner |
+```bash
+# 1. Start PostgreSQL + install dependencies
+make up
+make install
+
+# 2. Create schema and load the demo fleet
+make db-migrate
+make seed
+
+# 3. Run (two shells)
+make api     # FastAPI on http://localhost:8000  (Swagger at /docs)
+make web     # React on   http://localhost:5173
+```
+
+Copy `.env.example` → `.env` first and set a real `JWT_SECRET`.
+One-shot setup: `make demo` (starts DB, migrates, seeds).
+
+### Demo logins (password for all: `Transit@123`)
+
+| Email | Role | Can do |
 |---|---|---|
-| `CLAUDE.md` | Master instructions, conventions, guardrails, commands | All |
-| `docs/00-PROJECT-BRIEF.md` | Problem statement, users, judging criteria, scope tiers | All |
-| `docs/01-ARCHITECTURE.md` | System design, tech stack + rationale, repo layout | All |
-| `docs/02-DATABASE.md` | Complete PostgreSQL DDL, ERD, constraints, seed data | Afif |
-| `docs/03-API-SPEC.md` | Every endpoint: schemas, status codes, RBAC matrix | Ismail |
-| `docs/04-BUSINESS-RULES.md` | All 10 mandatory rules, state machines, enforcement map | Ismail + Afif |
-| `docs/05-FRONTEND-SPEC.md` | Design system, every screen/component, mockup fidelity | Piyush |
-| `docs/06-AI-FEATURES.md` | OpenRouter chatbot (RBAC-aware, admin-configurable), Trip Advisor, MCP stretch | Ismail |
-| `docs/07-TESTING.md` | Test strategy, the 10 business-rule tests, E2E demo script | All |
-| `docs/10-AI-KNOWLEDGE-BASE.md` | Ready-made chatbot static context (paste in BE-13) | Ismail |
-| `KICKOFF-PROMPTS.md` | Copy-paste AI-agent prompts per member + bootstrap order | All |
-| `docker-compose.yml`, `Makefile`, `.gitignore` | Ready-made infrastructure files (verify, do not rewrite) | All |
-| `docs/08-DEVOPS-GIT.md` | Docker Compose, env vars, Makefile, git workflow | All |
-| `docs/09-DEMO-SCRIPT.md` | 3-person presentation plan mapped to judging criteria | All |
-| `tasks/TASKS-OVERVIEW.md` | Live progress board, dependency graph, hour timeline | All |
-| `tasks/TASKS-1-AFIF-DATABASE.md` | Section 1 — Database (DB-01…DB-10) | Afif |
-| `tasks/TASKS-2-ISMAIL-BACKEND.md` | Section 2 — Backend (BE-01…BE-16) | Ismail |
-| `tasks/TASKS-3-PIYUSH-FRONTEND.md` | Section 3 — Frontend (FE-01…FE-16) | Piyush |
-| `.env.example` | All environment variables | All |
+| manager@transitops.in | Fleet Manager | Everything — fleet, users, AI settings |
+| dispatch@transitops.in | Driver / Dispatcher | Create, dispatch, complete & cancel trips, log fuel |
+| safety@transitops.in | Safety Officer | Driver compliance, licences, suspensions |
+| finance@transitops.in | Financial Analyst | Expenses, reports, ROI, CSV export |
 
-## MCP server (T2 stretch, BE-16)
+---
 
-`backend/mcp_server.py` exposes the same read-only AI tool registry
-(`app/services/ai/tools.py`) over the MCP stdio transport, so any MCP client —
-including **Claude Desktop** — can query the fleet directly.
+## What it does
 
-- Install the extra: `pip install -e ".[mcp]"` (adds `fastmcp`).
-- Run: `python mcp_server.py` (from `backend/`).
-- Auth: runs with a fixed service role equivalent to `financial_analyst` (the
-  broadest read scope). Per-user MCP auth is the production hardening step.
-- Connect from Claude Desktop: add to its MCP config —
-  ```json
-  { "mcpServers": { "transitops": {
-      "command": "python",
-      "args": ["/absolute/path/to/backend/mcp_server.py"]
-  } } }
-  ```
+- **Vehicle registry** — unique registrations, capacity, odometer, regions, retire/unretire
+  lifecycle. Deleting a vehicle with history is blocked; retiring is the paved path.
+- **Driver management** — licence categories and expiry tracking, safety scores,
+  suspension workflow. Expired or suspended drivers can never be assigned to a trip.
+- **Trip dispatching** — draft → dispatched → completed/cancelled state machine with row
+  locks and partial unique indexes, so double-dispatching a vehicle or driver is
+  impossible even under concurrent requests. Odometer rolls forward on completion, with
+  an optional linked fuel log.
+- **Maintenance** — opening a job pulls the vehicle out of the dispatch pool
+  automatically; closing it returns the vehicle to service.
+- **Fuel & expenses** — per-vehicle logs with validation and role-gated access.
+- **Dashboard & reports** — live KPIs (utilization, active trips, drivers on duty),
+  14-day trip chart, cost breakdown, per-vehicle fuel efficiency / operational cost /
+  ROI, one-click CSV export.
 
-## Non-negotiables (from the judges)
+### The 10 business rules
 
-- PostgreSQL running locally/Docker. **No Firebase, Supabase, or MongoDB Atlas.**
-- All data persistent in PostgreSQL — including chat history and AI settings. **No static JSON as the final data source.**
-- Robust input validation with human-readable feedback on every form and endpoint.
-- All three members commit regularly under their own git identity.
-- AI features must add real value: RBAC-aware fleet chatbot + AI Trip Advisor (dispatch risk analysis).
+Registration/licence uniqueness · no retired or in-shop vehicles in dispatch ·
+no expired/suspended drivers · no double-dispatch (DB-enforced) · cargo ≤ capacity ·
+dispatch flips vehicle+driver to on-trip · completion restores them and rolls the
+odometer · cancelling a dispatched trip restores both · opening maintenance sets
+in-shop · closing restores availability unless retired.
+
+All ten are enforced in service-layer transactions with `SELECT … FOR UPDATE`, and the
+critical ones again by the database itself (partial unique indexes, CHECK constraints).
+
+---
+
+## AI features (OpenRouter)
+
+Configure entirely from the UI: **Settings → AI** lets a Fleet Manager toggle the
+assistant, pick a model, tune temperature/tokens, edit the system prompt, manage the
+per-role tool permission grid, and **paste an OpenRouter API key** — stored in the
+database (never echoed back). Without a key, every AI surface degrades gracefully
+instead of breaking.
+
+- **Fleet chatbot** — role-aware assistant with 9 read-only tools against live data
+  (KPIs, vehicles, drivers, trips, maintenance, costs, fuel efficiency…). A driver
+  asking for ROI gets a polite refusal; tool calls are shown as chips for transparency;
+  every conversation is persisted.
+- **Trip Advisor** — deterministic risk checks (capacity, licence, availability,
+  utilization %, safety score, service overdue) with a go/caution/block verdict and an
+  LLM-written recommendation when configured. Advisory only; responds in milliseconds.
+- **Daily Ops Briefing** — one-screen morning summary: fleet status, expiring licences,
+  open workshop jobs, worst-ROI vehicles, live trips.
+- **Maintenance Risk Ranking** — explainable per-vehicle service-risk scores.
+- **Expense Anomaly Detection** — flags fuel-price outliers (median-band), duplicate
+  same-day expenses, and unusually large spends.
+- **MCP server** — `backend/mcp_server.py` exposes the same tool registry over the
+  Model Context Protocol, so Claude Desktop (or any MCP client) can query the fleet.
+
+---
+
+## Testing
+
+```bash
+make test    # 133 tests: business rules, RBAC sweep, schema constraints, e2e, AI
+make lint    # ruff + eslint
+```
+
+The e2e suite replays the full lifecycle — register vehicle → register driver → create
+trip → dispatch → complete with fuel → open/close maintenance → verify the report math —
+and prints its narration (`pytest -q -k e2e -s`).
+
+---
+
+## Security & production posture
+
+- JWT auth (30-min access + 7-day refresh with rotation), bcrypt cost 12
+- Server-side RBAC on every endpoint — the UI hides what the API already forbids
+- Friendly, field-targeted errors in one consistent envelope; unhandled errors return a
+  clean 500 without leaking internals
+- Login brute-force lockout (429 after repeated failures), security headers, gzip,
+  CORS allowlist, parameterized queries only, paginated lists capped at 100
+- Secrets only via environment / DB — never in git
+
+## Project structure
+
+```
+backend/
+  app/
+    api/v1/      # thin routers (auth, vehicles, drivers, trips, maintenance, …)
+    core/        # config, security (JWT/bcrypt), deps (RBAC), error envelope
+    db/          # engine, queries, seed, canonical schema.sql
+    models/      # SQLAlchemy models mirroring the DDL
+    schemas/     # Pydantic request/response models
+    services/    # ALL business logic, incl. services/ai/ (chat, advisor, insights)
+    tests/       # pytest suites A–E
+  alembic/       # migrations
+  mcp_server.py  # optional MCP exposure of the AI tool registry
+frontend/
+  src/
+    api/ auth/ components/ features/ hooks/ lib/ types/
+docs/            # architecture, API spec, business rules, DB design, testing
+```

@@ -17,7 +17,7 @@ Base URL `/api/v1`. All endpoints require `Authorization: Bearer <access_token>`
 ```
 - `422` validation (Pydantic errors mapped: first error → `field`, readable `message`).
 - `409` business-rule conflict (`DomainError` codes below). `401` bad/expired token → `TOKEN_EXPIRED`/`INVALID_CREDENTIALS`. `403` `FORBIDDEN_ROLE`. `404` `NOT_FOUND`.
-- Domain codes (exhaustive): `DUPLICATE_REGISTRATION`, `DUPLICATE_LICENSE`, `DUPLICATE_EMAIL`, `VEHICLE_NOT_AVAILABLE`, `DRIVER_NOT_AVAILABLE`, `DRIVER_LICENSE_EXPIRED`, `DRIVER_SUSPENDED`, `CARGO_EXCEEDS_CAPACITY`, `INVALID_STATUS_TRANSITION`, `VEHICLE_HAS_OPEN_MAINTENANCE`, `VEHICLE_HAS_HISTORY`, `END_ODOMETER_LT_START`, `AI_DISABLED`, `AI_TOOL_FORBIDDEN`.
+- Domain codes (exhaustive): `DUPLICATE_REGISTRATION`, `DUPLICATE_LICENSE`, `DUPLICATE_EMAIL`, `VEHICLE_NOT_AVAILABLE`, `DRIVER_NOT_AVAILABLE`, `DRIVER_LICENSE_EXPIRED`, `DRIVER_SUSPENDED`, `CARGO_EXCEEDS_CAPACITY`, `INVALID_STATUS_TRANSITION`, `VEHICLE_HAS_OPEN_MAINTENANCE`, `VEHICLE_HAS_HISTORY`, `END_ODOMETER_LT_START`, `AI_DISABLED`, `AI_TOOL_FORBIDDEN`. Auth: `EMAIL_NOT_FOUND`, `INCORRECT_PASSWORD`, `ACCOUNT_DISABLED` (401, field-targeted friendly messages) and `TOO_MANY_ATTEMPTS` (429, ≥8 failed logins per identity per 5 min). `500` → `INTERNAL_ERROR` envelope (details only in server logs).
 
 ## 3. RBAC matrix (enforced via `require_roles`; FM = fleet_manager, D = driver/dispatcher, SO = safety_officer, FA = financial_analyst)
 
@@ -45,7 +45,7 @@ Frontend hides forbidden actions; backend returns 403 regardless (state this in 
 ### Auth
 | Method + path | Body → Response |
 |---|---|
-| `POST /auth/login` | `{email, password}` → `200 {access_token, refresh_token, token_type:"bearer", user:{id,email,full_name,role}}`; `401 INVALID_CREDENTIALS` (same message for unknown email vs bad password — no user enumeration). |
+| `POST /auth/login` | `{email, password}` → `200 {access_token, refresh_token, token_type:"bearer", user:{id,email,full_name,role}}`; `401 EMAIL_NOT_FOUND` / `INCORRECT_PASSWORD` / `ACCOUNT_DISABLED` (specific, field-targeted messages — product choice; brute-force protected by `429 TOO_MANY_ATTEMPTS` per identity). |
 | `POST /auth/refresh` | `{refresh_token}` → new pair (rotation: old refresh rejected after use). |
 | `GET /auth/me` | → current user. |
 
@@ -91,9 +91,10 @@ Frontend hides forbidden actions; backend returns 403 regardless (state this in 
 - `GET /reports/vehicles.csv` → `text/csv` attachment, same rows, header row, filename `transitops_vehicle_report_<date>.csv`.
 
 ### AI (see docs/06 for full behavior)
-- `GET /ai/settings` (any role → `{chatbot_enabled, model}` only) / full object + `PUT /ai/settings` (FM only).
+- `GET /ai/settings` (any role → `{chatbot_enabled, model}` only) / full object + `PUT /ai/settings` (FM only). The FM view includes `openrouter_key_set: bool` (never the raw key); `PUT` accepts `openrouter_api_key` which is stored in the DB (`ai_settings.openrouter_api_key`, empty = fall back to the env var) so the assistant can be configured entirely from the UI.
 - `GET /ai/sessions` · `POST /ai/sessions` · `GET /ai/sessions/{id}/messages`.
 - `POST /ai/chat` `{session_id?, message}` → `{session_id, reply, tool_calls:[{tool,args}]}`; `503 AI_DISABLED` when disabled/unconfigured.
+- `GET /ai/insights/briefing` (FM/FA) · `GET /ai/insights/maintenance-risk` (FM/SO) · `GET /ai/insights/expense-anomalies` (FM/FA) → each returns `{narrative, llm_used, ...data}`; deterministic core always responds, LLM narrative only when OpenRouter is configured.
 - `POST /ai/trip-advisor` `{vehicle_id, driver_id, cargo_weight_kg, planned_distance_km}` → `{verdict:"go"|"caution"|"block", hard_failures:[…], risk_factors:[…], summary}`; deterministic checks always run even if LLM unavailable (summary then rule-generated).
 
 ## 5. Auth implementation notes
