@@ -135,7 +135,7 @@ cd backend && . .venv/bin/activate && pytest -q app/tests/test_schema_constraint
 
 ---
 
-## [ ] DB-09 — `db/queries.py`: KPI + report SQL functions
+## [x] DB-09 — `db/queries.py`: KPI + report SQL functions
 **Depends on:** DB-06
 **Deliverables**
 - `backend/app/db/queries.py` with typed functions wrapping the **verbatim SQL** from `docs/02 §5` via `sqlalchemy.text()` with bound params:
