@@ -53,7 +53,7 @@ cd backend && . .venv/bin/activate && python -c "from app.models.user import Use
 
 ---
 
-## [ ] DB-04 — Models: trips, maintenance, fuel, expenses (+ signature partial indexes)
+## [x] DB-04 — Models: trips, maintenance, fuel, expenses (+ signature partial indexes)
 **Depends on:** DB-03
 **Deliverables**
 - `models/trip.py`: all columns incl. `trip_code` (UNIQUE), `revenue`, odometers, lifecycle timestamps, `ck_trips_odometer`, `ck_trips_completed_fields`; FKs `ON DELETE RESTRICT`; relationships `vehicle`, `driver`, `creator`.
