@@ -1,13 +1,14 @@
 """AI settings singleton access + graceful-degradation guard (docs/06)."""
 from __future__ import annotations
 
+from sqlalchemy.orm import Session
+
 from app.core.config import get_settings
 from app.core.errors import DomainError
 from app.models.ai_settings import AISettings
 from app.models.user import User
 from app.services.ai.defaults import DEFAULT_ROLE_TOOL_PERMISSIONS, DEFAULT_SYSTEM_PROMPT
 from app.services.audit import audit
-from sqlalchemy.orm import Session
 
 
 def get_settings_row(db: Session) -> AISettings:
