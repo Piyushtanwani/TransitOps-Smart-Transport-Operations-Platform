@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import argparse
 import sys
-from datetime import date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 
 from sqlalchemy import func, select, text
@@ -36,7 +36,7 @@ from app.models.user import User
 from app.models.vehicle import Vehicle
 
 TODAY = date.today()
-NOW = datetime.now(timezone.utc)
+NOW = datetime.now(UTC)
 
 _DOMAIN_TABLES = [
     "chat_messages",

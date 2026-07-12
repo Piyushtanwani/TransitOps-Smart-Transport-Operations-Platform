@@ -2,8 +2,7 @@
 from __future__ import annotations
 
 import uuid
-from collections.abc import Generator
-from typing import Callable
+from collections.abc import Callable, Generator
 
 from fastapi import Depends, Request
 from sqlalchemy.orm import Session

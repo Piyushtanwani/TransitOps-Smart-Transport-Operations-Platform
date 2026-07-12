@@ -95,7 +95,8 @@ def make_trip(
     planned_distance_km: Any = "100",
     **kw: Any,
 ) -> Trip:
-    code = "TRP-%04d" % db.execute(text("SELECT nextval('trip_code_seq')")).scalar_one()
+    seq = db.execute(text("SELECT nextval('trip_code_seq')")).scalar_one()
+    code = f"TRP-{int(seq):04d}"
     t = Trip(
         trip_code=code,
         source=kw.pop("source", "Ahmedabad"),

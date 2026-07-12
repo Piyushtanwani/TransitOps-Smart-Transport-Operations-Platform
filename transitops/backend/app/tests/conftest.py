@@ -4,12 +4,12 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-from alembic import command
 from alembic.config import Config
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
+from alembic import command
 from app.core.config import get_settings
 from app.core.deps import get_db
 from app.main import app

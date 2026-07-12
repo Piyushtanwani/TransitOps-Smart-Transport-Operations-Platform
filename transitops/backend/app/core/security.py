@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from jose import JWTError, jwt
@@ -39,7 +39,7 @@ def _role_value(user: Any) -> str:
 def create_access_token(user: Any) -> str:
     """Access JWT: claims sub (user id), role, type='access', exp = now + TTL minutes."""
     settings = get_settings()
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     claims = {
         "sub": str(user.id),
         "role": _role_value(user),
@@ -53,7 +53,7 @@ def create_access_token(user: Any) -> str:
 def create_refresh_token(user: Any) -> str:
     """Refresh JWT: unique jti, type='refresh', exp = now + TTL days."""
     settings = get_settings()
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     claims = {
         "sub": str(user.id),
         "role": _role_value(user),

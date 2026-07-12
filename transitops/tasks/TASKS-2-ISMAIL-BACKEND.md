@@ -54,7 +54,7 @@ cd backend && . .venv/bin/activate && pytest -q app/tests/test_auth_rbac.py
 
 ---
 
-## [ ] BE-04 — Users CRUD (FM) + RBAC sweep scaffolding
+## [x] BE-04 — Users CRUD (FM) + RBAC sweep scaffolding
 **Depends on:** BE-03
 **Deliverables**
 - `schemas/user.py`, `api/v1/users.py` per spec: list (filters `role`, `q`), create (password policy: min 8, ≥1 digit — Pydantic validator with readable message), patch, delete = deactivate. All behind `require_roles("fleet_manager")`.

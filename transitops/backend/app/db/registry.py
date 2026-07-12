@@ -5,6 +5,15 @@ Models are added here as each DB task lands (DB-03..DB-05).
 """
 from __future__ import annotations
 
-from app.models import driver, user, vehicle  # noqa: F401  (DB-03)
-from app.models import expense, fuel_log, maintenance, trip  # noqa: F401  (DB-04)
-from app.models import ai_settings, audit, chat  # noqa: F401  (DB-05)
+from app.models import (  # noqa: F401  (users/vehicles/drivers/trips/maint/fuel/expense/ai/chat/audit)
+    ai_settings,
+    audit,
+    chat,
+    driver,
+    expense,
+    fuel_log,
+    maintenance,
+    trip,
+    user,
+    vehicle,
+)

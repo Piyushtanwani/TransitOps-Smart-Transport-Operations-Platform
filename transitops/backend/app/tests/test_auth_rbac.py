@@ -4,17 +4,21 @@ The parametrized RBAC sweep is appended by BE-04 onward.
 """
 from __future__ import annotations
 
+import uuid
+
+import pytest
 from freezegun import freeze_time
 
 from app.core.security import create_access_token
 from app.models.enums import UserRole
-from app.tests.factories import PASSWORD, auth_headers, login, make_user
+from app.tests.factories import auth_headers, login, make_user
 
 API = "/api/v1"
+ROLES = ["fleet_manager", "driver", "safety_officer", "financial_analyst"]
 
 
 def test_login_ok_returns_pair_and_user(client, db) -> None:
-    user = make_user(db, UserRole.fleet_manager, email="fm@test.in")
+    make_user(db, UserRole.fleet_manager, email="fm@test.in")
     r = login(client, "fm@test.in")
     assert r.status_code == 200
     body = r.json()
@@ -48,7 +52,7 @@ def test_inactive_user_401(client, db) -> None:
 
 
 def test_me_roundtrip(client, db) -> None:
-    user = make_user(db, UserRole.financial_analyst, email="fa@test.in")
+    make_user(db, UserRole.financial_analyst, email="fa@test.in")
     token = login(client, "fa@test.in").json()["access_token"]
     r = client.get(f"{API}/auth/me", headers={"Authorization": f"Bearer {token}"})
     assert r.status_code == 200
@@ -89,3 +93,74 @@ def test_expired_access_token_401_token_expired(client, db) -> None:
         r = client.get(f"{API}/auth/me", headers={"Authorization": f"Bearer {token}"})
     assert r.status_code == 401
     assert r.json()["error"]["code"] == "TOKEN_EXPIRED"
+
+
+# ---------------------------------------------------------------------------
+# Parametrized RBAC sweep (docs/03 §3). ONE growing table: each BE task appends
+# its rows here. The path appears in the test id, so `pytest -k <resource>`
+# selects that resource's rows.
+# ---------------------------------------------------------------------------
+
+def _sweep_body(key: str | None) -> dict | None:
+    if key == "user":
+        return {
+            "email": f"sweep_{uuid.uuid4().hex[:8]}@test.in",
+            "full_name": "Sweep User",
+            "role": "driver",
+            "password": "passw0rd1",
+        }
+    return None
+
+
+# (path, method, body_key, {role: expected_status})
+RBAC_MATRIX: list[tuple] = [
+    ("/users", "GET", None, {"fleet_manager": 200, "driver": 403, "safety_officer": 403, "financial_analyst": 403}),
+    ("/users", "POST", "user", {"fleet_manager": 201, "driver": 403, "safety_officer": 403, "financial_analyst": 403}),
+]
+
+_SWEEP_IDS = [f"{m}{p}" for (p, m, _, _) in RBAC_MATRIX]
+
+
+@pytest.mark.parametrize("role", ROLES)
+@pytest.mark.parametrize("path,method,body_key,expected", RBAC_MATRIX, ids=_SWEEP_IDS)
+def test_rbac_sweep(client, db, role, path, method, body_key, expected) -> None:
+    headers = auth_headers(client, db, role)
+    resp = client.request(method, f"{API}{path}", headers=headers, json=_sweep_body(body_key))
+    assert resp.status_code == expected[role], f"{role} {method} {path}: {resp.status_code} {resp.text}"
+
+
+# --- Users CRUD (FM) dedicated cases ---
+
+def test_users_create_duplicate_email_409(client, db) -> None:
+    headers = auth_headers(client, db, "fleet_manager")
+    body = {"email": "dupe@test.in", "full_name": "A", "role": "driver", "password": "passw0rd1"}
+    assert client.post(f"{API}/users", json=body, headers=headers).status_code == 201
+    r = client.post(f"{API}/users", json=body, headers=headers)
+    assert r.status_code == 409
+    err = r.json()["error"]
+    assert err["code"] == "DUPLICATE_EMAIL"
+    assert err["field"] == "email"
+
+
+def test_users_password_policy_422(client, db) -> None:
+    headers = auth_headers(client, db, "fleet_manager")
+    body = {"email": "weak@test.in", "full_name": "A", "role": "driver", "password": "short"}
+    r = client.post(f"{API}/users", json=body, headers=headers)
+    assert r.status_code == 422
+    assert r.json()["error"]["field"] == "password"
+
+
+def test_users_patch_and_deactivate(client, db) -> None:
+    headers = auth_headers(client, db, "fleet_manager")
+    created = client.post(
+        f"{API}/users",
+        json={"email": "life@test.in", "full_name": "Life", "role": "driver", "password": "passw0rd1"},
+        headers=headers,
+    ).json()
+    uid = created["id"]
+    patched = client.patch(f"{API}/users/{uid}", json={"full_name": "Renamed"}, headers=headers)
+    assert patched.status_code == 200 and patched.json()["full_name"] == "Renamed"
+    # DELETE deactivates (never hard-deletes)
+    assert client.delete(f"{API}/users/{uid}", headers=headers).status_code == 204
+    deactivated = login(client, "life@test.in")
+    assert deactivated.status_code == 401  # inactive user cannot log in

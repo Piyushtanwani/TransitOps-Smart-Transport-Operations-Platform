@@ -13,7 +13,6 @@ from sqlalchemy import (
     Index,
     Numeric,
     func,
-    text,
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship

@@ -128,7 +128,8 @@ def get_vehicle_report_rows(db: Session) -> list[dict]:
             FROM vehicles v
             LEFT JOIN (SELECT vehicle_id, SUM(end_odometer-start_odometer) AS total_distance,
                               SUM(revenue) AS total_revenue
-                       FROM trips WHERE status='completed' GROUP BY vehicle_id) t ON t.vehicle_id=v.id
+                       FROM trips WHERE status='completed' GROUP BY vehicle_id) t
+                   ON t.vehicle_id=v.id
             LEFT JOIN (SELECT vehicle_id, SUM(liters) total_liters, SUM(cost) total_fuel_cost
                        FROM fuel_logs GROUP BY vehicle_id) f ON f.vehicle_id=v.id
             LEFT JOIN (SELECT vehicle_id, SUM(cost) total_maint_cost
@@ -186,7 +187,11 @@ def get_trips_last_14_days(db: Session) -> list[dict]:
         )
     ).mappings().all()
     return [
-        {"date": r["date"].isoformat(), "completed": int(r["completed"]), "dispatched": int(r["dispatched"])}
+        {
+            "date": r["date"].isoformat(),
+            "completed": int(r["completed"]),
+            "dispatched": int(r["dispatched"]),
+        }
         for r in rows
     ]
 
@@ -218,6 +223,9 @@ def get_cost_breakdown_top8(db: Session) -> list[dict]:
 def get_status_distribution(db: Session) -> list[dict]:
     """Vehicle status distribution (dashboard chart)."""
     rows = db.execute(
-        text("SELECT status::text AS status, COUNT(*) AS count FROM vehicles GROUP BY status ORDER BY status")
+        text(
+            "SELECT status::text AS status, COUNT(*) AS count "
+            "FROM vehicles GROUP BY status ORDER BY status"
+        )
     ).mappings().all()
     return [{"status": r["status"], "count": int(r["count"])} for r in rows]
