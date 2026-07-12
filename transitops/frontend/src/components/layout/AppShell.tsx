@@ -1,20 +1,41 @@
-import React from 'react';
-import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { ThemeToggle } from '../ThemeToggle';
+import { useAuth } from '../../auth/AuthContext';
+import type { Role } from '../../types/api';
+import { ChatWidget } from '../ui/ChatWidget';
 
-const navItems = [
-  { label: 'Dashboard', path: '/dashboard' },
-  { label: 'Fleet', path: '/fleet' },
-  { label: 'Drivers', path: '/drivers' },
-  { label: 'Trips', path: '/trips' },
-  { label: 'Maintenance', path: '/maintenance' },
-  { label: 'Fuel & Expenses', path: '/fuel' },
-  { label: 'Analytics', path: '/analytics' },
-  { label: 'Settings', path: '/settings' },
+const ALL_NAV_ITEMS = [
+  { label: 'Dashboard', path: '/dashboard', roles: ['fleet_manager', 'dispatcher', 'safety_officer', 'financial_analyst'] },
+  { label: 'Fleet', path: '/fleet', roles: ['fleet_manager', 'dispatcher', 'safety_officer', 'financial_analyst'] },
+  { label: 'Drivers', path: '/drivers', roles: ['fleet_manager', 'dispatcher', 'safety_officer', 'financial_analyst'] },
+  { label: 'Trips', path: '/trips', roles: ['fleet_manager', 'dispatcher'] },
+  { label: 'Maintenance', path: '/maintenance', roles: ['fleet_manager', 'dispatcher', 'safety_officer', 'financial_analyst'] },
+  { label: 'Fuel & Expenses', path: '/fuel', roles: ['fleet_manager', 'financial_analyst'] },
+  { label: 'Analytics', path: '/analytics', roles: ['fleet_manager', 'financial_analyst'] },
+  { label: 'Settings', path: '/settings', roles: ['fleet_manager'] },
 ];
 
 export function AppShell() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
+  const navItems = ALL_NAV_ITEMS.filter(item => 
+    !user || item.roles.includes(user.role)
+  );
+
+  const formatRoleName = (role: Role) => {
+    return role.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  };
+  
+  const getInitials = (name: string) => {
+    return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+  };
 
   return (
     <div className="flex h-screen bg-surface-0 font-sans text-on-surface overflow-hidden">
@@ -59,13 +80,18 @@ export function AppShell() {
           </div>
           <div className="flex items-center space-x-4">
             <ThemeToggle />
-            <span className="text-sm font-medium">Raven K.</span>
-            <div className="flex items-center space-x-2 rounded-full border border-surface-2 p-1 pl-3 bg-surface-1">
-              <span className="text-xs font-medium text-info">Dispatcher</span>
-              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-info text-xs font-bold text-surface-0">
-                RK
-              </div>
-            </div>
+            {user && (
+              <>
+                <span className="text-sm font-medium">{user.full_name}</span>
+                <div className="flex items-center space-x-2 rounded-full border border-surface-2 p-1 pl-3 bg-surface-1">
+                  <span className="text-xs font-medium text-info">{formatRoleName(user.role)}</span>
+                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-info text-xs font-bold text-surface-0">
+                    {getInitials(user.full_name)}
+                  </div>
+                </div>
+                <button onClick={handleLogout} className="text-sm text-signal hover:underline ml-2">Logout</button>
+              </>
+            )}
           </div>
         </header>
 
@@ -74,6 +100,8 @@ export function AppShell() {
           <Outlet />
         </main>
       </div>
+
+      <ChatWidget />
     </div>
   );
 }
